@@ -20,6 +20,7 @@ import CustomerApp from './components/CustomerApp';
 import AdminApp from './components/AdminApp';
 import AgeGate from './components/AgeGate';
 import { Lock, X, ChevronRight, ShieldCheck, CloudCheck, RefreshCw } from 'lucide-react';
+import { speakOrderAlert } from './services/geminiService';
 
 const App: React.FC = () => {
   // --- REAL-TIME VAULT STORAGE ---
@@ -223,6 +224,12 @@ const App: React.FC = () => {
     };
     setOrders(prev => [newOrder, ...prev]);
     setCart([]);
+    
+    // Voice Notification System Trigger
+    if (settings.alarmSoundOn) {
+      speakOrderAlert();
+    }
+    
     return newOrder;
   };
 
