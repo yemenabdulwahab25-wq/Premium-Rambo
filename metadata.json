@@ -1,0 +1,7 @@
+{
+  "name": "Premium Rambo - Exotic Pickup",
+  "description": "A comprehensive cannabis pickup application with advanced admin controls, bulk product management, and AI-powered product descriptions.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
