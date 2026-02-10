@@ -132,7 +132,6 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
     return result;
   }, [products, activeCategory, searchQuery]);
 
-  // --- RELATED PRODUCTS LOGIC ---
   const relatedProducts = useMemo(() => {
     if (!selectedProduct) return [];
     
@@ -294,13 +293,11 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                 <div className="bg-emerald-50 px-8 py-5 rounded-[40px] border border-emerald-100 text-center shadow-sm"><span className="block text-[10px] text-emerald-600 font-black uppercase mb-1 tracking-widest">THC Value</span><span className="text-3xl font-black text-emerald-900">{selectedProduct.thc}%</span></div>
               </div>
 
-              {/* Description */}
               <div className="space-y-4">
                 <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[6px] ml-2 flex items-center gap-2"><Info size={14}/> Genetics Profile</h4>
                 <p className="text-slate-600 text-lg leading-relaxed font-medium bg-slate-50 p-8 rounded-[40px] border border-slate-100 italic">"{selectedProduct.description}"</p>
               </div>
 
-              {/* Weight Selection */}
               <div className="space-y-8">
                 <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[6px] ml-2 flex items-center gap-2"><Layers size={14}/> Available Weights</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -313,7 +310,6 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                 </div>
               </div>
 
-              {/* RELATED PRODUCTS SECTION */}
               {relatedProducts.length > 0 && (
                 <div className="space-y-8 pt-12 border-t border-slate-100">
                   <div className="flex items-center justify-between ml-2">
@@ -484,7 +480,8 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
         </div>
       )}
 
-      <div className={`fixed bottom-36 right-8 z-[150] transition-all duration-700 ${isBobbyOpen ? 'w-full max-w-[440px] h-[720px] bottom-10 px-4' : 'w-auto'}`}>
+      {/* Bobby Pro AI Mini FAB */}
+      <div className={`fixed z-[150] transition-all duration-700 ${isBobbyOpen ? 'w-full max-w-[440px] h-[720px] inset-4 md:inset-auto md:bottom-10 md:right-10' : 'bottom-36 right-8 w-16 h-16'}`}>
         {isBobbyOpen ? (
           <div className="bg-white rounded-[72px] shadow-2xl flex flex-col h-full border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-24 duration-700">
             <div className="bg-slate-900 p-12 text-white flex items-center justify-between"><div className="flex items-center gap-4"><Zap size={28} fill="currentColor" className="text-emerald-500"/><span className="font-black text-2xl tracking-tighter uppercase">Bobby Pro AI</span></div><button onClick={() => setIsBobbyOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition-all"><Minus size={28} /></button></div>
@@ -498,9 +495,14 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
             </div>
           </div>
         ) : (
-          <button onClick={() => setIsBobbyOpen(true)} className="bg-slate-900 text-white px-12 py-8 rounded-[48px] shadow-2xl flex items-center gap-6 hover:scale-110 active:scale-90 transition-all group">
-            <div className="relative"><Zap size={28} fill="currentColor" className="text-emerald-500 group-hover:animate-pulse"/><div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-0 group-hover:opacity-40 transition-opacity"></div></div>
-            <span className="font-black text-[13px] uppercase tracking-[8px]">Ask Bobby</span>
+          <button 
+            onClick={() => setIsBobbyOpen(true)} 
+            className="bg-slate-900 text-white w-full h-full rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all group border border-white/10"
+          >
+            <div className="relative">
+              <Zap size={24} fill="currentColor" className="text-emerald-500 group-hover:animate-pulse"/>
+              <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-0 group-hover:opacity-40 transition-opacity"></div>
+            </div>
           </button>
         )}
       </div>
