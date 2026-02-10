@@ -213,16 +213,19 @@ export const scanProductFromImage = async (base64Image: string, mimeType: string
             },
           },
           {
-            text: `Act as a professional cannabis genetics vault expert and label scanner. 
-            Analyze the product packaging image provided. Look for elite brands (e.g., Jungle Boys, Connected, Alien Labs, etc.) and specific strain names.
-            Extract product information. If a detail is unclear, make a best guess based on industry standards for elite cannabis brands.
+            text: `Act as an advanced "Genetics Lens" (similar to Google Lens) specialized in the premium cannabis industry. 
+            Analyze the product image with extreme precision. Identify exotic genetics, high-end packaging signatures, and regulatory labels.
             
-            Return a JSON object with:
-            - name: Product/Strain name (e.g. "Ice Cream Cake", "Lemon Cherry Gelato")
-            - brand: Brand name identified from the logo or text (e.g. "Jungle Boys")
-            - thc: THC percentage as a number (e.g. 28.5)
-            - type: One of "Sativa", "Indica", "Hybrid"
-            - category: One of "Flowers", "Disposables", "Carts", "Pre-Rolls", "Gummies", "Edibles", "Concentrates", "Tinctures", "Drinks", "Accessories".`,
+            EXTRACT TASKS:
+            1. Recognize the exact brand from logos, typography, or packaging style (e.g., Jungle Boys, 710 Labs, Alien Labs).
+            2. Identify the specific strain name (e.g., "Zkittlez", "Blueberry Cruffin").
+            3. Detect the THC and CBD percentages from lab testing labels.
+            4. Classify based on terpene profiles or packaging indicators (Indica/Sativa/Hybrid).
+            5. Determine the category (Flowers, Concentrates, etc.).
+
+            If data is missing, use your deep industry knowledge of these brands to fill in the most likely details (e.g., if it's a Connected 'Gushers' pack, it's likely a Hybrid).
+
+            Return a strict JSON object.`,
           },
         ],
       }],

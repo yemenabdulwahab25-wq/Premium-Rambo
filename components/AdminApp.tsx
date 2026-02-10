@@ -46,7 +46,9 @@ import {
   Mail,
   Gift,
   Camera,
-  Scan
+  Scan,
+  CircleDashed,
+  Crosshair
 } from 'lucide-react';
 import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings, CustomProtocol } from '../types';
 import { generateProductDescription, removeImageBackground, scanProductFromImage } from '../services/geminiService';
@@ -182,9 +184,11 @@ const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => vo
     <div className="space-y-10 animate-in fade-in duration-500 pb-20">
       <div className="flex justify-between items-center">
         <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[6px]">Active Vault Inventory ({products.length})</h3>
-        <button onClick={onAdd} className="bg-emerald-600 text-white px-10 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 shadow-2xl active:scale-95 transition-all">
-          <Plus size={18} /> New Product SKU
-        </button>
+        <div className="flex gap-4">
+           <button onClick={onAdd} className="bg-emerald-600 text-white px-10 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 shadow-2xl active:scale-95 transition-all">
+            <Plus size={18} /> New Product SKU
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -251,20 +255,17 @@ const AllInOneProductTool: React.FC<{
   const brandLogoInputRef = useRef<HTMLInputElement>(null);
   const initialLoad = useRef(true);
 
-  // Auto-save logic (2-second debounce)
   useEffect(() => {
     if (initialLoad.current) {
       initialLoad.current = false;
       return;
     }
-
     setSaveStatus('unsaved');
     const timer = setTimeout(() => {
       setSaveStatus('saving');
       onSave(data);
       setTimeout(() => setSaveStatus('saved'), 600);
     }, 2000);
-
     return () => clearTimeout(timer);
   }, [data, onSave]);
 
@@ -289,21 +290,23 @@ const AllInOneProductTool: React.FC<{
           try {
             const scannedData = await scanProductFromImage(base64Data, mimeType);
             if (scannedData) {
+              const normalizedType = scannedData.type ? (scannedData.type.charAt(0).toUpperCase() + scannedData.type.slice(1).toLowerCase()) : data.type;
+              
               setData(prev => ({
                 ...prev,
                 name: scannedData.name || prev.name,
                 brand: scannedData.brand || prev.brand,
                 thc: scannedData.thc || prev.thc,
                 category: scannedData.category || prev.category,
-                type: scannedData.type as StrainType || prev.type,
-                image: dataUrl // Keep the scanned image as product image
+                type: normalizedType as StrainType,
+                image: dataUrl 
               }));
-              setScanFeedback("Vault Genetics Recognized!");
+              setScanFeedback("GENETICS IDENTIFIED");
               setTimeout(() => setScanFeedback(null), 3000);
             }
           } catch (error) {
-            console.error("Smart Scan failed:", error);
-            setScanFeedback("Genetics Recognition Failed.");
+            console.error("Lens Scan failed:", error);
+            setScanFeedback("IDENTIFICATION FAILED");
             setTimeout(() => setScanFeedback(null), 3000);
           } finally {
             setIsScanning(false);
@@ -361,187 +364,178 @@ const AllInOneProductTool: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 sm:p-12 backdrop-blur-3xl animate-in fade-in duration-300">
-      <div className="absolute inset-0 bg-slate-950/98" onClick={onClose}></div>
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[96vh] shadow-[0_0_150px_rgba(0,0,0,0.8)]">
-        <div className="p-10 border-b border-white/5 bg-[#0a0d14] flex justify-between items-center shrink-0 z-10">
-           <div className="flex items-center gap-6">
-              <div className="space-y-1">
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Genetics Vault Entry Tool</h2>
-                <div className="flex items-center gap-4">
-                  <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    Integrated System
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-3xl animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-[#05070a]/95" onClick={onClose}></div>
+      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-lg bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[92vh] shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+        
+        {/* Header */}
+        <div className="p-12 pb-8 bg-[#0a0d14] relative z-10">
+           <div className="flex justify-between items-start">
+              <div className="space-y-4">
+                <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">GENETICS VAULT ENTRY<br/>TOOL</h2>
+                <div className="flex items-center gap-8">
+                  <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[3px] flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                    INTEGRATED SYSTEM
                   </p>
-                  <div className="h-4 w-px bg-white/10"></div>
                   <div className="flex items-center gap-2">
-                    {saveStatus === 'saving' ? (
-                      <RefreshCw size={10} className="text-blue-400 animate-spin" />
-                    ) : saveStatus === 'unsaved' ? (
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                    ) : (
-                      <CloudCheck size={12} className="text-emerald-500" />
-                    )}
-                    <span className={`text-[8px] font-black uppercase tracking-widest ${
-                      saveStatus === 'saving' ? 'text-blue-400' : 
-                      saveStatus === 'unsaved' ? 'text-amber-500' : 'text-emerald-500'
-                    }`}>
-                      {saveStatus === 'saving' ? 'Syncing...' : 
-                       saveStatus === 'unsaved' ? 'Changes Pending' : 'Vault Synced'}
-                    </span>
+                    <CloudCheck size={14} className="text-emerald-500" />
+                    <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">VAULT SYNCED</span>
                   </div>
                 </div>
               </div>
+              <button onClick={onClose} className="w-16 h-16 bg-slate-900/50 text-slate-400 rounded-full flex items-center justify-center hover:text-white transition-all border border-white/5 shadow-2xl"><X size={32}/></button>
            </div>
-           <button onClick={onClose} className="p-4 bg-slate-900/80 text-slate-500 rounded-full hover:text-rose-500 transition-all border border-white/5"><X size={28}/></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-12 sm:p-16 space-y-12 custom-scrollbar">
-          {/* 1. Visual Capture & AI Tools */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center ml-4">
-                <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-2"><ImageIcon size={14}/> Product Photo</h4>
-                <button 
-                  onClick={() => scanInputRef.current?.click()}
-                  className="bg-emerald-600/10 text-emerald-500 px-4 py-2 rounded-xl border border-emerald-500/20 text-[8px] font-black uppercase tracking-[3px] flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-lg"
-                >
-                  <Camera size={12}/> Smart Scan Packaging
-                </button>
-              </div>
-              <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
-                <img src={data.image} className="w-full h-full object-contain p-6 transition-transform duration-1000 group-hover:scale-110" />
-                {(isProcessing || isScanning) && (
-                  <div className="absolute inset-0 bg-emerald-600/90 backdrop-blur-3xl flex flex-col items-center justify-center animate-in fade-in">
-                    <RefreshCw className="animate-spin text-white mb-4" size={40}/>
-                    <span className="text-[8px] font-black text-white uppercase tracking-widest">
-                      {isScanning ? 'Extracting Genetics...' : 'AI Scrubbing...'}
-                    </span>
-                  </div>
-                )}
-                {scanFeedback && (
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-6 py-3 rounded-full shadow-2xl border border-white/5 animate-in slide-in-from-bottom-2">
-                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                      <Check size={12}/> {scanFeedback}
-                    </span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                   <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Manual Photo</button>
-                </div>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'image')} />
-                <input ref={scanInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileCapture(e, 'scan')} />
-              </div>
+        <div className="flex-1 overflow-y-auto p-12 pt-0 space-y-12 custom-scrollbar no-scrollbar">
+          {/* Lens Visual - Enhanced for 'Google Lens' Experience */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-4">
+                < LucideImage size={14}/> PRODUCT PHOTO
+              </h4>
+              <button 
+                onClick={() => scanInputRef.current?.click()}
+                className="bg-[#10b981]/10 border border-[#10b981]/50 px-6 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[3px] flex items-center gap-3 text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <Camera size={16} className="group-hover:scale-110 transition-transform"/> GENETICS LENS AI
+              </button>
             </div>
-
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><LucideImage size={14}/> Brand Identity (Logo)</h4>
-              <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
-                <img src={data.brandLogo} className="w-full h-full object-contain p-12 transition-transform duration-1000 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <button onClick={() => brandLogoInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Upload Logo</button>
-                </div>
-                <input ref={brandLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'brandLogo')} />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {/* Category */}
-            <FormField label="Vault Section (Category)" icon={<Boxes size={16}/>}>
-              <div className="flex gap-4">
-                <select value={data.category} onChange={e => setData({...data, category: e.target.value})} className="form-input-premium flex-1">
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <button onClick={() => setShowAddCat(!showAddCat)} className="bg-slate-900 p-6 rounded-[28px] border border-white/10 text-emerald-500 hover:bg-emerald-600 hover:text-white transition-all">
-                  <Plus size={24}/>
-                </button>
-              </div>
-              {showAddCat && (
-                <div className="mt-4 flex gap-3 animate-in slide-in-from-top-2">
-                  <input value={newCat} onChange={e => setNewCat(e.target.value)} className="form-input-premium flex-1" placeholder="New Category Name..." />
-                  <button onClick={addCategory} className="bg-emerald-600 px-8 rounded-[28px] font-black uppercase text-[10px] tracking-widest text-white">Save</button>
+            
+            <div className="aspect-square relative bg-slate-950 rounded-[64px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
+              {data.image ? (
+                <img src={data.image} className="w-full h-full object-contain p-10 transition-transform duration-1000 group-hover:scale-105" />
+              ) : (
+                <div className="flex flex-col items-center gap-4 text-slate-800">
+                  <div className="relative">
+                    <Camera size={64}/>
+                    <div className="absolute -inset-4 border-2 border-emerald-500/20 rounded-full animate-ping"></div>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[4px]">Awaiting Genetics...</span>
                 </div>
               )}
-            </FormField>
 
-            {/* Brand */}
-            <FormField label="Genetics Provider (Brand)" icon={<Zap size={16}/>}>
-              <div className="flex gap-4">
-                <select value={data.brand} onChange={e => setData({...data, brand: e.target.value})} className="form-input-premium flex-1">
-                  {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-                <button onClick={() => setShowAddBrand(!showAddBrand)} className="bg-slate-900 p-6 rounded-[28px] border border-white/10 text-emerald-500 hover:bg-emerald-600 hover:text-white transition-all">
-                  <Plus size={24}/>
-                </button>
-              </div>
-              {showAddBrand && (
-                <div className="mt-4 flex gap-3 animate-in slide-in-from-top-2">
-                  <input value={newBrand} onChange={e => setNewBrand(e.target.value)} className="form-input-premium flex-1" placeholder="New Brand Name..." />
-                  <button onClick={addBrand} className="bg-emerald-600 px-8 rounded-[28px] font-black uppercase text-[10px] tracking-widest text-white">Save</button>
+              {/* Google Lens Style Scanning Overlay */}
+              {isScanning && (
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                  {/* Laser Line */}
+                  <div className="absolute left-0 right-0 h-[2px] bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,1)] animate-scan z-30"></div>
+                  {/* Scanning Dots Backdrop */}
+                  <div className="absolute inset-0 bg-emerald-900/10 backdrop-blur-[2px] animate-pulse"></div>
+                  {/* Floating Diagnostic Points */}
+                  <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping"></div>
+                  <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping delay-300"></div>
+                  <div className="absolute bottom-1/4 left-1/2 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping delay-700"></div>
+                  
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                     <span className="text-[11px] font-black text-white uppercase tracking-[10px] mt-20 animate-bounce">
+                      ANALYZING DNA
+                    </span>
+                  </div>
                 </div>
               )}
-            </FormField>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <FormField label="Flavor / Strain Name" icon={<Sparkles size={16}/>}>
-              <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-2xl" placeholder="Ex. Purple Runtz..." />
-            </FormField>
-            <div className="grid grid-cols-2 gap-10">
-              <FormField label="THC Level (%)" icon={<TrendingUp size={16}/>}>
-                <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium" />
-              </FormField>
-              <FormField label="Strain Type" icon={<LayoutGrid size={16}/>}>
-                <select value={data.type} onChange={e => setData({...data, type: e.target.value as StrainType})} className="form-input-premium">
-                  {Object.values(StrainType).map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </FormField>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><Package size={14}/> Variations & Stock Control</h4>
-            <div className="space-y-4">
-              {data.weights.map((w, idx) => (
-                <div key={idx} className="grid grid-cols-3 gap-4 bg-slate-950 p-6 rounded-[32px] border border-white/5">
-                  <div className="space-y-1">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-4">Weight Format</span>
-                    <input value={w.weight} placeholder="e.g. 3.5g" onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, weight: e.target.value} : wt)})} className="bg-transparent border-none outline-none font-black text-white px-4 w-full" />
+              {isProcessing && (
+                <div className="absolute inset-0 bg-[#0a0d14]/80 backdrop-blur-2xl flex flex-col items-center justify-center animate-in fade-in z-20">
+                  <div className="relative">
+                    <RefreshCw className="animate-spin text-emerald-500 mb-6" size={48}/>
+                    <div className="absolute inset-0 blur-xl bg-emerald-500/20"></div>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-4">Current Stock</span>
-                    <input type="number" placeholder="Units" value={w.stock} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, stock: parseInt(e.target.value) || 0} : wt)})} className="bg-transparent border-none outline-none font-black text-white px-4 w-full" />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-4">Price ($)</span>
-                    <input type="number" step="0.01" placeholder="Valuation" value={w.price} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, price: parseFloat(e.target.value) || 0} : wt)})} className="bg-transparent border-none outline-none font-black text-emerald-500 px-4 w-full" />
-                  </div>
+                  <span className="text-[10px] font-black text-white uppercase tracking-[5px]">
+                    POLISHING IMAGE...
+                  </span>
                 </div>
-              ))}
-              <button onClick={() => setData({...data, weights: [...data.weights, { weight: '', price: 0, stock: 0 }]})} className="w-full py-4 border-2 border-dashed border-white/5 rounded-[28px] text-[9px] font-black uppercase tracking-[4px] text-slate-700 hover:text-emerald-500 hover:border-emerald-500 transition-all">+ Add Weight Profile</button>
+              )}
+              
+              {scanFeedback && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-8 py-4 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.4)] border border-white/10 animate-in zoom-in-95 z-40">
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3 whitespace-nowrap">
+                    <Check size={16}/> {scanFeedback}
+                  </span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+                <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-[5px] shadow-2xl active:scale-95 transition-all">Manual Photo</button>
+              </div>
             </div>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'image')} />
+            <input ref={scanInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileCapture(e, 'scan')} />
           </div>
 
-          <div className="space-y-6">
-            <div className="flex justify-between items-center ml-4">
-               <label className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-2"><MessageSquare size={14}/> AI Genetics Description</label>
-               <button onClick={handleAiDescription} disabled={isAiGenerating} className="bg-emerald-600/10 text-emerald-500 px-6 py-3 rounded-2xl border border-emerald-500/20 text-[9px] font-black uppercase tracking-[3px] flex items-center gap-3 hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50">
-                {isAiGenerating ? <RefreshCw className="animate-spin" size={14}/> : <Wand2 size={14}/>} {isAiGenerating ? 'AI Synthesizing...' : 'Regenerate Narrative'}
-               </button>
+          {/* Form Content */}
+          <div className="space-y-10">
+            <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-4"><LucideImage size={14}/> BRAND IDENTITY (LOGO)</h4>
+            <div className="h-48 relative bg-slate-950 rounded-[48px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
+              <img src={data.brandLogo} className="w-full h-full object-contain p-12 transition-transform duration-1000 group-hover:scale-110" />
+              <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                 <button onClick={() => brandLogoInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[10px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Upload Logo</button>
+              </div>
+              <input ref={brandLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'brandLogo')} />
             </div>
-            <textarea value={data.description} onChange={e => setData({...data, description: e.target.value})} className="w-full bg-slate-950 border border-white/5 p-10 rounded-[48px] text-slate-400 font-medium text-lg min-h-[160px] outline-none focus:border-emerald-500 transition-all leading-relaxed custom-scrollbar" />
+
+            <div className="grid grid-cols-1 gap-8">
+              <FormField label="FLAVOR / STRAIN NAME" icon={<Sparkles size={16}/>}>
+                <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-2xl py-8" placeholder="Ex. Purple Runtz..." />
+              </FormField>
+              
+              <div className="grid grid-cols-2 gap-8">
+                <FormField label="THC LEVEL (%)" icon={<TrendingUp size={16}/>}>
+                  <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium py-6" />
+                </FormField>
+                <FormField label="STRAIN TYPE" icon={<LayoutGrid size={16}/>}>
+                  <select value={data.type} onChange={e => setData({...data, type: e.target.value as StrainType})} className="form-input-premium py-6">
+                    {Object.values(StrainType).map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </FormField>
+              </div>
+            </div>
+
+            <FormField label="VAULT SECTION" icon={<Boxes size={16}/>}>
+              <select value={data.category} onChange={e => setData({...data, category: e.target.value})} className="form-input-premium">
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </FormField>
           </div>
         </div>
 
-        <div className="p-12 border-t border-white/5 bg-[#0a0d14] flex gap-6 shrink-0 z-10">
-          {onDelete && <button onClick={onDelete} className="p-8 rounded-[40px] bg-rose-950/20 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-95"><Trash2 size={32}/></button>}
-          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black py-8 rounded-[48px] uppercase tracking-[10px] text-[14px] shadow-2xl hover:bg-emerald-500 transition-all active:scale-[0.98]">AUTHORIZE & SAVE PRODUCT</button>
+        {/* Footer */}
+        <div className="p-12 pt-8 border-t border-white/5 bg-[#0a0d14] flex gap-8 shrink-0 z-10">
+          <button 
+            onClick={onDelete} 
+            className="w-24 h-24 rounded-[32px] bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-90 flex items-center justify-center"
+          >
+            <Trash2 size={40}/>
+          </button>
+          
+          <button 
+            onClick={onClose} 
+            className="flex-1 bg-emerald-600 text-white font-black rounded-[48px] uppercase tracking-[8px] text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none"
+          >
+            <div className="mb-1 text-xs">AUTHORIZE</div>
+            <div className="flex items-center gap-3">
+              <span className="opacity-50 text-[10px]">&</span>
+              <span>SAVE PRODUCT</span>
+            </div>
+          </button>
         </div>
       </div>
       <style>{`
-        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 28px; padding: 20px 28px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; }
+        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 32px; padding: 24px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; }
         .form-input-premium:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        .animate-scan {
+          position: absolute;
+          animation: scan 2s linear infinite;
+        }
       `}</style>
     </div>
   );
@@ -622,14 +616,14 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
            <FormField label="Preferred Channel" icon={<Activity size={16}/>}>
-              <select value={settings.messaging.channel} onChange={e => updateMessaging({ channel: e.target.value as any })} className="form-input-premium">
+              <select value={settings.messaging.channel} onChange={e => updateMessaging({ channel: e.target.value as any })} className="form-input-premium-settings">
                  <option value="sms">SMS Protocol</option>
                  <option value="email">Email Protocol</option>
                  <option value="both">Hybrid Sync (Both)</option>
               </select>
            </FormField>
            <FormField label="Message Style" icon={<Zap size={16}/>}>
-              <select value={settings.messaging.style} onChange={e => updateMessaging({ style: e.target.value as any })} className="form-input-premium">
+              <select value={settings.messaging.style} onChange={e => updateMessaging({ style: e.target.value as any })} className="form-input-premium-settings">
                  <option value="friendly">Friendly Budtender</option>
                  <option value="premium">Executive Exotic</option>
               </select>
@@ -652,14 +646,14 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
            <FormField label="Points Per Dollar" icon={<Coins size={16}/>}>
-              <input type="number" value={settings.loyalty.pointsPerDollar} onChange={e => updateLoyalty({ pointsPerDollar: parseFloat(e.target.value) || 0 })} className="form-input-premium" />
+              <input type="number" value={settings.loyalty.pointsPerDollar} onChange={e => updateLoyalty({ pointsPerDollar: parseFloat(e.target.value) || 0 })} className="form-input-premium-settings" />
            </FormField>
            <FormField label="Reward Threshold" icon={<TrendingUp size={16}/>}>
-              <input type="number" value={settings.loyalty.rewardThreshold} onChange={e => updateLoyalty({ rewardThreshold: parseInt(e.target.value) || 0 })} className="form-input-premium" />
+              <input type="number" value={settings.loyalty.rewardThreshold} onChange={e => updateLoyalty({ rewardThreshold: parseInt(e.target.value) || 0 })} className="form-input-premium-settings" />
            </FormField>
         </div>
         <FormField label="Reward Description" icon={<Gift size={16}/>}>
-           <input value={settings.loyalty.rewardDescription} onChange={e => updateLoyalty({ rewardDescription: e.target.value })} className="form-input-premium" placeholder="e.g. Free 1g Pre-Roll" />
+           <input value={settings.loyalty.rewardDescription} onChange={e => updateLoyalty({ rewardDescription: e.target.value })} className="form-input-premium-settings" placeholder="e.g. Free 1g Pre-Roll" />
         </FormField>
       </div>
 
@@ -703,8 +697,8 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
       </div>
 
       <style>{`
-        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 18px 24px; font-weight: 800; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 14px; }
-        .form-input-premium:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
+        .form-input-premium-settings { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 18px 24px; font-weight: 800; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 14px; }
+        .form-input-premium-settings:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
       `}</style>
     </div>
   );
@@ -727,7 +721,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
     const newProduct: Product = {
       id: Math.random().toString(36).substr(2,9).toUpperCase(),
       name: '', brand: brands[0] || 'Unknown', category: categories[0] || 'Uncategorized', type: StrainType.Hybrid, thc: 0,
-      description: '', shortDescription: '', tags: [], image: 'https://picsum.photos/seed/sku/800/800',
+      description: '', shortDescription: '', tags: [], image: '',
       brandLogo: 'https://picsum.photos/seed/brand/200/200', weights: [{ weight: '3.5g', price: 0, stock: 0 }], isPublished: true
     };
     setProducts(prev => [newProduct, ...prev]);
@@ -743,7 +737,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
         <nav className="flex-1 flex flex-col gap-10 items-center">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
           <SidebarIconButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ClipboardList size={24}/>} title="Queue" />
-          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory'} icon={<Package size={24}/>} title="SKUs" />
+          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={24}/>} title="SKUs" />
           <SidebarIconButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={24}/>} title="Tools" />
         </nav>
         <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group"><LogOut size={26}/><span className="text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span></button>
