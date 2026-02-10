@@ -37,9 +37,17 @@ import {
   CloudUpload,
   Link2,
   Image as LucideImage,
-  Upload
+  Upload,
+  Ticket,
+  MessagesSquare,
+  Activity,
+  PlusSquare,
+  // Fix: Add missing icon imports
+  Smartphone,
+  Mail,
+  Gift
 } from 'lucide-react';
-import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings } from '../types';
+import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings, CustomProtocol } from '../types';
 import { generateProductDescription, removeImageBackground } from '../services/geminiService';
 
 interface AdminAppProps {
@@ -510,8 +518,26 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
     reader.readAsDataURL(file);
   };
 
+  const toggleProtocol = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      customProtocols: prev.customProtocols.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p)
+    }));
+  };
+
+  const addProtocol = () => {
+    const newProtocol: CustomProtocol = {
+      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      label: 'New Protocol',
+      description: 'Define operational logic...',
+      enabled: false
+    };
+    setSettings(prev => ({ ...prev, customProtocols: [...prev.customProtocols, newProtocol] }));
+  };
+
   return (
     <div className="max-w-5xl space-y-16 animate-in fade-in duration-500 pb-96">
+      {/* 1. Brand Identity */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><LucideImage className="text-emerald-500" size={32}/> Brand Identity</h3>
         <div className="flex flex-col md:flex-row items-center gap-12">
@@ -528,6 +554,7 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
       </div>
 
+      {/* 2. Operations Master */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Globe className="text-emerald-500" size={32}/> Operations Master</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -537,7 +564,86 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
           <ToggleRow active={settings.alarmSoundOn} onToggle={() => setSettings(s => ({...s, alarmSoundOn: !s.alarmSoundOn}))} label="Audible Alerts" description="Sonic notifications active." icon={<Volume2 size={20}/>} />
         </div>
       </div>
+
+      {/* 3. Messaging Engine (NEW) */}
+      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
+        <div className="flex items-center justify-between">
+           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><MessagesSquare className="text-emerald-500" size={32}/> Messaging Engine</h3>
+           <ToggleRow active={settings.messaging.postPickupEnabled} onToggle={() => updateMessaging({ postPickupEnabled: !settings.messaging.postPickupEnabled })} label="" description="" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+           <FormField label="Preferred Channel" icon={<Activity size={16}/>}>
+              <select value={settings.messaging.channel} onChange={e => updateMessaging({ channel: e.target.value as any })} className="form-input-premium">
+                 <option value="sms">SMS Protocol</option>
+                 <option value="email">Email Protocol</option>
+                 <option value="both">Hybrid Sync (Both)</option>
+              </select>
+           </FormField>
+           <FormField label="Message Style" icon={<Zap size={16}/>}>
+              <select value={settings.messaging.style} onChange={e => updateMessaging({ style: e.target.value as any })} className="form-input-premium">
+                 <option value="friendly">Friendly Budtender</option>
+                 <option value="premium">Executive Exotic</option>
+              </select>
+           </FormField>
+        </div>
+        <div className="space-y-8">
+           <FormField label="SMS Template" icon={<Smartphone size={16}/>}>
+              <textarea value={settings.messaging.smsTemplate} onChange={e => updateMessaging({ smsTemplate: e.target.value })} className="w-full bg-slate-950 border border-white/5 p-8 rounded-[32px] text-slate-400 font-medium text-sm min-h-[100px] outline-none focus:border-emerald-500 transition-all leading-relaxed" />
+           </FormField>
+           <FormField label="Email Template" icon={<Mail size={16}/>}>
+              <textarea value={settings.messaging.emailTemplate} onChange={e => updateMessaging({ emailTemplate: e.target.value })} className="w-full bg-slate-950 border border-white/5 p-8 rounded-[32px] text-slate-400 font-medium text-sm min-h-[100px] outline-none focus:border-emerald-500 transition-all leading-relaxed" />
+           </FormField>
+        </div>
+      </div>
+
+      {/* 4. Loyalty Architect (NEW) */}
+      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
+        <div className="flex items-center justify-between">
+           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Ticket className="text-emerald-500" size={32}/> Loyalty Architect</h3>
+           <ToggleRow active={settings.loyalty.enabled} onToggle={() => updateLoyalty({ enabled: !settings.loyalty.enabled })} label="" description="" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+           <FormField label="Points Per Dollar" icon={<Coins size={16}/>}>
+              <input type="number" value={settings.loyalty.pointsPerDollar} onChange={e => updateLoyalty({ pointsPerDollar: parseFloat(e.target.value) || 0 })} className="form-input-premium" />
+           </FormField>
+           <FormField label="Reward Threshold" icon={<TrendingUp size={16}/>}>
+              <input type="number" value={settings.loyalty.rewardThreshold} onChange={e => updateLoyalty({ rewardThreshold: parseInt(e.target.value) || 0 })} className="form-input-premium" />
+           </FormField>
+        </div>
+        <FormField label="Reward Description" icon={<Gift size={16}/>}>
+           <input value={settings.loyalty.rewardDescription} onChange={e => updateLoyalty({ rewardDescription: e.target.value })} className="form-input-premium" placeholder="e.g. Free 1g Pre-Roll" />
+        </FormField>
+      </div>
+
+      {/* 5. Custom Protocols (NEW TOOL LIST) */}
+      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
+        <div className="flex items-center justify-between">
+           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><ShieldCheck className="text-emerald-500" size={32}/> Custom Protocols</h3>
+           <button onClick={addProtocol} className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"><Plus size={20}/></button>
+        </div>
+        <div className="space-y-6">
+           {settings.customProtocols.length === 0 ? (
+             <div className="py-10 text-center text-slate-700 font-black uppercase tracking-[5px] text-[10px] border-2 border-dashed border-slate-900 rounded-[32px]">No Active Protocols</div>
+           ) : (
+             settings.customProtocols.map(protocol => (
+               <div key={protocol.id} className="bg-slate-950/50 p-8 rounded-[32px] border border-white/5 flex items-center justify-between group">
+                  <div className="space-y-1">
+                     <h4 className="text-white font-black uppercase tracking-tight text-lg">{protocol.label}</h4>
+                     <p className="text-slate-500 text-xs font-medium italic">{protocol.description}</p>
+                  </div>
+                  <div className="flex items-center gap-6">
+                     <button onClick={() => toggleProtocol(protocol.id)} className={`w-14 h-7 rounded-full p-1 transition-all ${protocol.enabled ? 'bg-emerald-600' : 'bg-slate-800'}`}>
+                        <div className={`w-5 h-5 bg-white rounded-full transition-all ${protocol.enabled ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                     </button>
+                     <button onClick={() => setSettings(prev => ({ ...prev, customProtocols: prev.customProtocols.filter(p => p.id !== protocol.id) }))} className="text-slate-700 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={20}/></button>
+                  </div>
+               </div>
+             ))
+           )}
+        </div>
+      </div>
       
+      {/* 6. Cloud Sync */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Github className="text-slate-400" size={32}/> Cloud Sync</h3>
         {!settings.github.connected ? (
@@ -549,6 +655,11 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
           <div className="flex items-center gap-4 text-emerald-500 font-black uppercase tracking-widest text-xs"><CloudCheck size={20}/> VAULT CONNECTED TO {settings.github.repoName}</div>
         )}
       </div>
+
+      <style>{`
+        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 18px 24px; font-weight: 800; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 14px; }
+        .form-input-premium:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
+      `}</style>
     </div>
   );
 };

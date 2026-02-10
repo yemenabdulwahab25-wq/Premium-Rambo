@@ -28,6 +28,7 @@ import {
   Smartphone,
   CreditCard,
   ShieldCheck,
+  Eye,
   EyeOff,
   User as UserIcon,
   LogOut,
@@ -96,6 +97,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeBrand, setActiveBrand] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [selectedWeight, setSelectedWeight] = useState<WeightPrice | null>(null);
   const [selectedQty, setSelectedQty] = useState(1);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -345,6 +347,12 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                       <div key={product.id} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all flex flex-col group relative">
                         <div className="absolute top-4 right-4 z-10 flex gap-2">
                           <button 
+                            onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
+                            className="p-2 rounded-full backdrop-blur-md bg-white/40 text-slate-900 hover:text-blue-500 transition-all active:scale-75 border border-white/50"
+                          >
+                            <Eye size={18} strokeWidth={2.5} />
+                          </button>
+                          <button 
                             onClick={(e) => handleShare(e, product)}
                             className="p-2 rounded-full backdrop-blur-md bg-white/40 text-slate-900 hover:text-emerald-500 transition-all active:scale-75 border border-white/50"
                           >
@@ -388,11 +396,19 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                   {filteredProducts.map(product => {
                     const lowestPrice = Math.min(...product.weights.map(w => w.price));
                     return (
-                      <div key={product.id} onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer">
-                        <div className="aspect-square relative overflow-hidden bg-slate-50">
+                      <div key={product.id} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer relative group">
+                        <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button 
+                            onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
+                            className="p-2 rounded-full backdrop-blur-md bg-white/40 text-slate-900 border border-white/50"
+                          >
+                            <Eye size={18} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                        <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="aspect-square relative overflow-hidden bg-slate-50">
                           <img src={product.image} className="w-full h-full object-cover" />
                         </div>
-                        <div className="p-6">
+                        <div className="p-6" onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }}>
                           <h3 className="font-black text-slate-900 text-sm truncate">{product.name}</h3>
                           <span className="text-emerald-600 font-black text-xs">${lowestPrice}</span>
                         </div>
@@ -475,6 +491,52 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
           </div>
         )}
       </div>
+
+      {/* Quick View Modal */}
+      {quickViewProduct && (
+        <div className="fixed inset-0 z-[2500] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => setQuickViewProduct(null)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-[56px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.4)] animate-in zoom-in-95 duration-300">
+             <button onClick={() => setQuickViewProduct(null)} className="absolute top-6 right-6 z-10 p-3 bg-white/80 backdrop-blur-md rounded-full text-slate-900 border border-slate-100 shadow-sm active:scale-90 transition-all"><X size={20}/></button>
+             <div className="aspect-square bg-slate-50 relative overflow-hidden">
+                <img src={quickViewProduct.image} className="w-full h-full object-cover" />
+                <div className="absolute bottom-6 left-6 flex gap-2">
+                   <div className="bg-slate-900/80 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl uppercase tracking-widest">{quickViewProduct.category}</div>
+                   <div className="bg-emerald-600/80 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl uppercase tracking-widest">{quickViewProduct.thc}% THC</div>
+                </div>
+             </div>
+             <div className="p-10 space-y-6">
+                <div className="flex justify-between items-start">
+                   <div className="space-y-1">
+                      <h3 className="text-3xl font-black text-slate-900 leading-tight tracking-tighter">{quickViewProduct.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <img src={quickViewProduct.brandLogo} className="w-4 h-4 rounded-full" />
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[4px]">{quickViewProduct.brand}</p>
+                      </div>
+                   </div>
+                   <span className="text-3xl font-black text-slate-900 tracking-tighter">${Math.min(...quickViewProduct.weights.map(w => w.price))}</span>
+                </div>
+                <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                   <p className="text-slate-500 text-sm font-medium leading-relaxed italic">"{quickViewProduct.shortDescription || 'Analyzing genetic properties...'}"</p>
+                </div>
+                <div className="pt-4 flex gap-4">
+                   <button 
+                    onClick={() => { setSelectedProduct(quickViewProduct); setQuickViewProduct(null); }} 
+                    className="flex-1 py-6 bg-slate-900 text-white rounded-[32px] text-[10px] font-black uppercase tracking-[6px] hover:bg-slate-800 transition-all active:scale-95"
+                   >
+                    View Full Genetics
+                   </button>
+                   <button 
+                    onClick={() => { setSelectedProduct(quickViewProduct); setSelectedWeight(quickViewProduct.weights[0]); setQuickViewProduct(null); }} 
+                    className="p-6 bg-emerald-600 text-white rounded-[32px] hover:bg-emerald-500 transition-all active:scale-95 shadow-xl shadow-emerald-600/20"
+                   >
+                    <Plus size={24}/>
+                   </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -710,6 +772,52 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                 </div>
             </div>
             <button onClick={handleCheckout} className="w-full text-white font-black py-9 rounded-[56px] shadow-2xl bg-emerald-600 uppercase tracking-[10px] text-[14px] hover:bg-emerald-500 active:scale-95 transition-all">AUTHORIZE ORDER</button>
+          </div>
+        </div>
+      )}
+
+      {/* Quick View Modal */}
+      {quickViewProduct && (
+        <div className="fixed inset-0 z-[2500] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => setQuickViewProduct(null)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-[56px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.4)] animate-in zoom-in-95 duration-300">
+             <button onClick={() => setQuickViewProduct(null)} className="absolute top-6 right-6 z-10 p-3 bg-white/80 backdrop-blur-md rounded-full text-slate-900 border border-slate-100 shadow-sm active:scale-90 transition-all"><X size={20}/></button>
+             <div className="aspect-square bg-slate-50 relative overflow-hidden">
+                <img src={quickViewProduct.image} className="w-full h-full object-cover" />
+                <div className="absolute bottom-6 left-6 flex gap-2">
+                   <div className="bg-slate-900/80 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl uppercase tracking-widest">{quickViewProduct.category}</div>
+                   <div className="bg-emerald-600/80 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl uppercase tracking-widest">{quickViewProduct.thc}% THC</div>
+                </div>
+             </div>
+             <div className="p-10 space-y-6">
+                <div className="flex justify-between items-start">
+                   <div className="space-y-1">
+                      <h3 className="text-3xl font-black text-slate-900 leading-tight tracking-tighter">{quickViewProduct.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <img src={quickViewProduct.brandLogo} className="w-4 h-4 rounded-full" />
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[4px]">{quickViewProduct.brand}</p>
+                      </div>
+                   </div>
+                   <span className="text-3xl font-black text-slate-900 tracking-tighter">${Math.min(...quickViewProduct.weights.map(w => w.price))}</span>
+                </div>
+                <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                   <p className="text-slate-500 text-sm font-medium leading-relaxed italic">"{quickViewProduct.shortDescription || 'Analyzing genetic properties...'}"</p>
+                </div>
+                <div className="pt-4 flex gap-4">
+                   <button 
+                    onClick={() => { setSelectedProduct(quickViewProduct); setQuickViewProduct(null); }} 
+                    className="flex-1 py-6 bg-slate-900 text-white rounded-[32px] text-[10px] font-black uppercase tracking-[6px] hover:bg-slate-800 transition-all active:scale-95"
+                   >
+                    View Full Genetics
+                   </button>
+                   <button 
+                    onClick={() => { setSelectedProduct(quickViewProduct); setSelectedWeight(quickViewProduct.weights[0]); setQuickViewProduct(null); }} 
+                    className="p-6 bg-emerald-600 text-white rounded-[32px] hover:bg-emerald-500 transition-all active:scale-95 shadow-xl shadow-emerald-600/20"
+                   >
+                    <Plus size={24}/>
+                   </button>
+                </div>
+             </div>
           </div>
         </div>
       )}
