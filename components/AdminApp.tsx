@@ -229,15 +229,32 @@ const AllInOneProductTool: React.FC<{
   const [data, setData] = useState<Product>(product);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [newCat, setNewCat] = useState('');
   const [newBrand, setNewBrand] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
   const [showAddBrand, setShowAddBrand] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const brandLogoInputRef = useRef<HTMLInputElement>(null);
+  const initialLoad = useRef(true);
 
+  // Auto-save logic (2-second debounce)
   useEffect(() => {
-    onSave(data);
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      return;
+    }
+
+    setSaveStatus('unsaved');
+    const timer = setTimeout(() => {
+      setSaveStatus('saving');
+      onSave(data);
+      // Brief delay to show "Saving..." state for UX feedback
+      setTimeout(() => setSaveStatus('saved'), 600);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, [data, onSave]);
 
   const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'brandLogo') => {
@@ -306,12 +323,33 @@ const AllInOneProductTool: React.FC<{
       <div className="absolute inset-0 bg-slate-950/98" onClick={onClose}></div>
       <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[96vh] shadow-[0_0_150px_rgba(0,0,0,0.8)]">
         <div className="p-10 border-b border-white/5 bg-[#0a0d14] flex justify-between items-center shrink-0 z-10">
-           <div className="space-y-1">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Genetics Vault Entry Tool</h2>
-              <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                Integrated All-In-One System
-              </p>
+           <div className="flex items-center gap-6">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Genetics Vault Entry Tool</h2>
+                <div className="flex items-center gap-4">
+                  <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    Integrated System
+                  </p>
+                  <div className="h-4 w-px bg-white/10"></div>
+                  <div className="flex items-center gap-2">
+                    {saveStatus === 'saving' ? (
+                      <RefreshCw size={10} className="text-blue-400 animate-spin" />
+                    ) : saveStatus === 'unsaved' ? (
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                    ) : (
+                      <CloudCheck size={12} className="text-emerald-500" />
+                    )}
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${
+                      saveStatus === 'saving' ? 'text-blue-400' : 
+                      saveStatus === 'unsaved' ? 'text-amber-500' : 'text-emerald-500'
+                    }`}>
+                      {saveStatus === 'saving' ? 'Syncing...' : 
+                       saveStatus === 'unsaved' ? 'Changes Pending' : 'Vault Synced'}
+                    </span>
+                  </div>
+                </div>
+              </div>
            </div>
            <button onClick={onClose} className="p-4 bg-slate-900/80 text-slate-500 rounded-full hover:text-rose-500 transition-all border border-white/5"><X size={28}/></button>
         </div>
