@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Package, 
@@ -552,6 +551,7 @@ const AllInOneProductTool: React.FC<{
   const brandLogoInputRef = useRef<HTMLInputElement>(null);
   const initialLoad = useRef(true);
 
+  // Autosave logic (background)
   useEffect(() => {
     if (initialLoad.current) {
       initialLoad.current = false;
@@ -565,6 +565,16 @@ const AllInOneProductTool: React.FC<{
     }, 2000);
     return () => clearTimeout(timer);
   }, [data, onSave]);
+
+  // Explicit Save logic (button click)
+  const handleFinalSave = () => {
+    setSaveStatus('saving');
+    onSave(data);
+    setTimeout(() => {
+      setSaveStatus('saved');
+      onClose();
+    }, 400);
+  };
 
   const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'brandLogo' | 'scan') => {
     const file = e.target.files?.[0];
@@ -637,13 +647,13 @@ const AllInOneProductTool: React.FC<{
               <div className="space-y-2 md:space-y-4">
                 <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter leading-tight">GENETICS VAULT ENTRY<br className="md:hidden"/>TOOL</h2>
                 <div className="flex items-center gap-4 md:gap-8">
-                  <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-[3px] flex items-center gap-2">
-                    <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-emerald-500"></div>
-                    INTEGRATED SYSTEM
+                  <p className={`text-[8px] md:text-[10px] font-black uppercase tracking-[3px] flex items-center gap-2 ${saveStatus === 'saved' ? 'text-emerald-500' : 'text-orange-400'}`}>
+                    <div className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${saveStatus === 'saved' ? 'bg-emerald-500' : 'bg-orange-400 animate-pulse'}`}></div>
+                    {saveStatus === 'saved' ? 'VAULT SECURED' : 'UNCOMMITTED CHANGES'}
                   </p>
                   <div className="flex items-center gap-2">
-                    <CloudCheck size={14} className="text-emerald-500" />
-                    <span className="text-[8px] md:text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">VAULT SYNCED</span>
+                    <CloudCheck size={14} className={saveStatus === 'saving' ? 'text-blue-500 animate-spin' : 'text-emerald-500'} />
+                    <span className="text-[8px] md:text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">{saveStatus === 'saving' ? 'COMMITTING...' : 'VAULT SYNCED'}</span>
                   </div>
                 </div>
               </div>
@@ -740,14 +750,25 @@ const AllInOneProductTool: React.FC<{
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </FormField>
+
+            <ToggleRow 
+              active={data.isPublished} 
+              onToggle={() => setData({...data, isPublished: !data.isPublished})} 
+              label="Live in Menu" 
+              description="Make this product visible to customers." 
+              icon={<Globe size={20}/>} 
+            />
           </div>
         </div>
 
         <div className="p-8 md:p-12 pt-6 md:pt-8 border-t border-white/5 bg-[#0a0d14] flex gap-4 md:gap-8 shrink-0 z-10">
           <button onClick={onDelete} className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[32px] bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-90 flex items-center justify-center shrink-0"><Trash2 size={24} className="md:size-[40px]"/></button>
-          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black rounded-2xl md:rounded-[48px] uppercase tracking-[4px] md:tracking-[8px] text-[11px] md:text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none px-4">
-            <div className="mb-0.5 md:mb-1 text-[8px] md:text-xs">AUTHORIZE</div>
-            <div className="flex items-center gap-1.5 md:gap-3"><span className="opacity-50 text-[7px] md:text-[10px]">&</span><span>SAVE PRODUCT</span></div>
+          <button onClick={handleFinalSave} className="flex-1 bg-emerald-600 text-white font-black rounded-2xl md:rounded-[48px] uppercase tracking-[4px] md:tracking-[8px] text-[11px] md:text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none px-4">
+            <div className="mb-0.5 md:mb-1 text-[8px] md:text-xs uppercase tracking-widest">{saveStatus === 'saving' ? 'WRITING DNA...' : 'AUTHORIZE VAULT'}</div>
+            <div className="flex items-center gap-1.5 md:gap-3">
+              {saveStatus === 'saving' ? <RefreshCw className="animate-spin" size={16}/> : <ShieldCheck size={18}/>}
+              <span>{saveStatus === 'saving' ? 'PLEASE WAIT' : 'SAVE PRODUCT'}</span>
+            </div>
           </button>
         </div>
       </div>
@@ -801,10 +822,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
           <ToggleRow active={settings.alarmSoundOn} onToggle={() => setSettings(s => ({...s, alarmSoundOn: !s.alarmSoundOn}))} label="Audible Alerts" description="Sonic notifications active." icon={<Volume2 size={20}/>} />
         </div>
       </div>
-
-      <style>{`
-        .form-input-premium-settings { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; md:border-radius: 24px; padding: 14px md:padding: 18px 24px; font-weight: 800; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 13px md:font-size: 14px; }
-      `}</style>
     </div>
   );
 };
@@ -826,9 +843,9 @@ const AdminApp: React.FC<AdminAppProps> = ({
   const handleAddNewProduct = () => {
     const newProduct: Product = {
       id: Math.random().toString(36).substr(2,9).toUpperCase(),
-      name: '', brand: brands[0] || 'Unknown', category: categories[0] || 'Uncategorized', type: StrainType.Hybrid, thc: 0,
+      name: '', brand: brands[0] || 'Unknown', category: categories[0] || 'Flowers', type: StrainType.Hybrid, thc: 0,
       description: '', shortDescription: '', tags: [], image: '',
-      brandLogo: 'https://picsum.photos/seed/brand/200/200', weights: [{ weight: '3.5g', price: 0, stock: 0 }], isPublished: true
+      brandLogo: 'https://picsum.photos/seed/brand/200/200', weights: [{ weight: '3.5g', price: 0, stock: 10 }], isPublished: true
     };
     setProducts(prev => [newProduct, ...prev]);
     setEditingProduct(newProduct);
@@ -878,7 +895,13 @@ const AdminApp: React.FC<AdminAppProps> = ({
         <AllInOneProductTool 
           product={editingProduct} categories={categories} setCategories={setCategories}
           brands={brands} setBrands={setBrands} onClose={() => setEditingProduct(null)} 
-          onSave={p => setProducts(prev => prev.map(old => old.id === p.id ? p : old))} 
+          onSave={p => setProducts(prev => {
+            const exists = prev.find(old => old.id === p.id);
+            if (exists) {
+              return prev.map(old => old.id === p.id ? p : old);
+            }
+            return [p, ...prev];
+          })} 
           onDelete={() => { setProducts(prev => prev.filter(p => p.id !== editingProduct.id)); setEditingProduct(null); }} 
         />
       )}
