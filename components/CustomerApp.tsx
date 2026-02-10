@@ -44,7 +44,8 @@ import {
   Lock,
   Sparkles,
   Layers,
-  Bot
+  Bot,
+  ShieldAlert
 } from 'lucide-react';
 import { Product, CartItem, StoreSettings, Order, OrderStatus, WeightPrice, PaymentMethod, PaymentStatus, OrderType, User, Address } from '../types';
 import { getCategoryIcon } from '../constants';
@@ -240,49 +241,77 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative">
-      <div className="max-w-7xl mx-auto w-full">{activeTab === 'store' && renderStore()}{activeTab === 'orders' && (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-10 animate-in fade-in duration-500 pb-40">
-           <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter ml-4">Transmission Queue</h2>
-           <div className="space-y-6">
-              {orders.length === 0 ? (
-                <div className="py-40 text-center opacity-10 flex flex-col items-center"><History size={80} className="mb-6 text-slate-900" /><p className="font-black uppercase text-sm tracking-[6px] text-slate-900 text-center">No Orders Tracked</p></div>
-              ) : (
-                orders.map(order => (
-                  <div key={order.id} className="bg-white rounded-[32px] md:rounded-[56px] border border-slate-100 shadow-xl overflow-hidden hover:shadow-2xl transition-all">
-                     <div className="p-6 md:p-8 border-b flex justify-between items-center bg-slate-50/50"><div className="space-y-1"><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest">TRANSMISSION ID</span><span className="text-sm md:text-base font-black text-slate-900 uppercase tracking-widest">#{order.id}</span></div><span className={`px-4 md:px-6 py-2 md:py-3 rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border ${order.status === OrderStatus.Ready ? 'bg-emerald-500 text-white border-emerald-400 animate-pulse' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>{order.status}</span></div>
-                     <div className="p-8 md:p-10 bg-slate-900 text-white flex justify-between items-center"><span className="text-[10px] md:text-[11px] font-black uppercase tracking-[4px] md:tracking-[6px] text-slate-500">Total Value</span><span className="text-3xl md:text-4xl font-black text-emerald-400 tracking-tighter">${order.total.toFixed(2)}</span></div>
+      <div className="max-w-7xl mx-auto w-full">
+        {activeTab === 'store' && renderStore()}
+        {activeTab === 'orders' && (
+          <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-10 animate-in fade-in duration-500 pb-40">
+             <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter ml-4">Transmission Queue</h2>
+             <div className="space-y-6">
+                {orders.length === 0 ? (
+                  <div className="py-40 text-center opacity-10 flex flex-col items-center"><History size={80} className="mb-6 text-slate-900" /><p className="font-black uppercase text-sm tracking-[6px] text-slate-900 text-center">No Orders Tracked</p></div>
+                ) : (
+                  orders.map(order => (
+                    <div key={order.id} className="bg-white rounded-[32px] md:rounded-[56px] border border-slate-100 shadow-xl overflow-hidden hover:shadow-2xl transition-all">
+                       <div className="p-6 md:p-8 border-b flex justify-between items-center bg-slate-50/50"><div className="space-y-1"><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest">TRANSMISSION ID</span><span className="text-sm md:text-base font-black text-slate-900 uppercase tracking-widest">#{order.id}</span></div><span className={`px-4 md:px-6 py-2 md:py-3 rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border ${order.status === OrderStatus.Ready ? 'bg-emerald-500 text-white border-emerald-400 animate-pulse' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>{order.status}</span></div>
+                       <div className="p-8 md:p-10 bg-slate-900 text-white flex justify-between items-center"><span className="text-[10px] md:text-[11px] font-black uppercase tracking-[4px] md:tracking-[6px] text-slate-500">Total Value</span><span className="text-3xl md:text-4xl font-black text-emerald-400 tracking-tighter">${order.total.toFixed(2)}</span></div>
+                    </div>
+                  ))
+                )}
+             </div>
+          </div>
+        )}
+        {activeTab === 'account' && (
+          <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-12 animate-in fade-in duration-500 pb-40">
+            {currentUser ? (
+              <div className="bg-white rounded-[32px] md:rounded-[64px] border border-slate-100 p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 blur-[120px] rounded-full"></div>
+                <div className="flex items-center justify-between relative z-10 mb-8 md:mb-12">
+                  <div className="flex items-center gap-4 md:gap-8">
+                    <div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-600 rounded-2xl md:rounded-[44px] flex items-center justify-center text-white shrink-0"><UserIcon size={32} className="md:size-[48px]" /></div>
+                    <div><h2 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter truncate max-w-[200px] md:max-w-full">{currentUser.name}</h2><p className="text-slate-400 font-bold uppercase tracking-[4px] text-[8px] md:text-[10px] mt-1">Active Member</p></div>
                   </div>
-                ))
-              )}
-           </div>
-        </div>
-      )}{activeTab === 'account' && (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-12 animate-in fade-in duration-500 pb-40">
-          {currentUser ? (
-            <div className="bg-white rounded-[32px] md:rounded-[64px] border border-slate-100 p-8 md:p-12 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 blur-[120px] rounded-full"></div>
-              <div className="flex items-center justify-between relative z-10 mb-8 md:mb-12">
-                <div className="flex items-center gap-4 md:gap-8">
-                  <div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-600 rounded-2xl md:rounded-[44px] flex items-center justify-center text-white shrink-0"><UserIcon size={32} className="md:size-[48px]" /></div>
-                  <div><h2 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter truncate max-w-[200px] md:max-w-full">{currentUser.name}</h2><p className="text-slate-400 font-bold uppercase tracking-[4px] text-[8px] md:text-[10px] mt-1">Active Member</p></div>
+                  <button onClick={onLogout} className="p-4 md:p-6 bg-rose-50 text-rose-600 rounded-2xl md:rounded-[32px] hover:bg-rose-100 transition-all shrink-0"><LogOut size={20} className="md:size-[28px]" /></button>
                 </div>
-                <button onClick={onLogout} className="p-4 md:p-6 bg-rose-50 text-rose-600 rounded-2xl md:rounded-[32px] hover:bg-rose-100 transition-all shrink-0"><LogOut size={20} className="md:size-[28px]" /></button>
+                <div className="bg-slate-900 p-8 md:p-10 rounded-[32px] md:rounded-[48px] shadow-2xl border border-white/5">
+                    <div className="flex justify-between items-center mb-6 md:mb-8"><span className="text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[5px] md:tracking-[8px]">Loyalty Stash</span><span className="text-4xl md:text-5xl font-black text-white">{currentUser.points}</span></div>
+                    <div className="w-full h-3 md:h-4 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${Math.min(100, (currentUser.points / settings.loyalty.rewardThreshold) * 100)}%` }} /></div>
+                    <p className="mt-4 md:mt-6 text-[8px] md:text-[9px] font-black uppercase text-slate-500 tracking-[2px] md:tracking-[3px] text-center">{settings.loyalty.rewardDescription}</p>
+                </div>
+
+                {/* Staff Access point (Discreet) */}
+                <div className="mt-20 pt-10 border-t border-slate-100 flex justify-center">
+                   <button 
+                     onClick={onStaffLogin} 
+                     className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-slate-100 text-slate-300 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95 group"
+                   >
+                     <ShieldAlert size={18} className="group-hover:animate-pulse" />
+                     <span className="text-[10px] font-black uppercase tracking-[4px]">Staff Portal Access</span>
+                   </button>
+                </div>
               </div>
-              <div className="bg-slate-900 p-8 md:p-10 rounded-[32px] md:rounded-[48px] shadow-2xl border border-white/5">
-                  <div className="flex justify-between items-center mb-6 md:mb-8"><span className="text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[5px] md:tracking-[8px]">Loyalty Stash</span><span className="text-4xl md:text-5xl font-black text-white">{currentUser.points}</span></div>
-                  <div className="w-full h-3 md:h-4 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${Math.min(100, (currentUser.points / settings.loyalty.rewardThreshold) * 100)}%` }} /></div>
-                  <p className="mt-4 md:mt-6 text-[8px] md:text-[9px] font-black uppercase text-slate-500 tracking-[2px] md:tracking-[3px] text-center">{settings.loyalty.rewardDescription}</p>
+            ) : (
+              <div className="space-y-12">
+                <div className="text-center py-20 md:py-28 bg-white rounded-[32px] md:rounded-[64px] border border-slate-100 shadow-xl space-y-8 md:space-y-10 px-6">
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-50 rounded-2xl md:rounded-[40px] flex items-center justify-center text-slate-200 mx-auto"><UserIcon size={40} className="md:size-[48px]"/></div>
+                    <div className="space-y-3"><h3 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">Membership Portal</h3><p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-[4px] md:tracking-[5px]">Access exotic drops and points.</p></div>
+                    <button onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }} className="w-full sm:w-auto bg-slate-900 text-white px-10 md:px-20 py-5 md:py-7 rounded-2xl md:rounded-[40px] font-black uppercase text-[11px] md:text-[12px] tracking-[4px] md:tracking-[6px] shadow-2xl active:scale-95 transition-all">SIGN IN / JOIN VAULT</button>
+                </div>
+
+                {/* Staff Access point for unauthenticated state */}
+                <div className="flex justify-center">
+                   <button 
+                     onClick={onStaffLogin} 
+                     className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-slate-100 text-slate-300 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95 group"
+                   >
+                     <ShieldAlert size={18} />
+                     <span className="text-[10px] font-black uppercase tracking-[4px]">Staff Entry</span>
+                   </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-20 md:py-28 bg-white rounded-[32px] md:rounded-[64px] border border-slate-100 shadow-xl space-y-8 md:space-y-10 px-6">
-                <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-50 rounded-2xl md:rounded-[40px] flex items-center justify-center text-slate-200 mx-auto"><UserIcon size={40} className="md:size-[48px]"/></div>
-                <div className="space-y-3"><h3 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter">Membership Portal</h3><p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-[4px] md:tracking-[5px]">Access exotic drops and points.</p></div>
-                <button onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }} className="w-full sm:w-auto bg-slate-900 text-white px-10 md:px-20 py-5 md:py-7 rounded-2xl md:rounded-[40px] font-black uppercase text-[11px] md:text-[12px] tracking-[4px] md:tracking-[6px] shadow-2xl active:scale-95 transition-all">SIGN IN / JOIN VAULT</button>
-            </div>
-          )}
-        </div>
-      )}</div>
+            )}
+          </div>
+        )}
+      </div>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t px-4 md:px-8 py-6 md:py-10 flex justify-center z-[120] shadow-[0_-20px_50px_rgba(0,0,0,0.05)] rounded-t-[32px] md:rounded-t-[64px]">
         <div className="max-w-md w-full flex justify-around items-center">
@@ -292,7 +321,6 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
         </div>
       </nav>
 
-      {/* Cart, Auth, Bobby modals updated to be responsive */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }

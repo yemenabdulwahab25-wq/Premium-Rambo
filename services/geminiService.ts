@@ -35,6 +35,23 @@ async function decodeAudioData(
   return buffer;
 }
 
+export const checkSystemHealth = async (): Promise<{ status: 'ok' | 'error', latency: number, message: string }> => {
+  const start = Date.now();
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [{ parts: [{ text: 'System check: respond with OK' }] }],
+    });
+    const end = Date.now();
+    if (response.text?.includes('OK')) {
+      return { status: 'ok', latency: end - start, message: 'Gemini AI connection stable.' };
+    }
+    throw new Error('Unexpected response format.');
+  } catch (error: any) {
+    return { status: 'error', latency: 0, message: error.message || 'Connection failed.' };
+  }
+};
+
 export const speakOrderAlert = async () => {
   try {
     const response = await ai.models.generateContent({

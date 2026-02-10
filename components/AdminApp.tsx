@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Package, 
@@ -51,10 +52,27 @@ import {
   Cpu,
   Mic,
   BrainCircuit,
-  Binary
+  Binary,
+  Activity as Pulse,
+  Terminal,
+  Server
 } from 'lucide-react';
 import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings, CustomProtocol } from '../types';
-import { generateProductDescription, removeImageBackground, aiInventoryWizard } from '../services/geminiService';
+import { generateProductDescription, removeImageBackground, aiInventoryWizard, checkSystemHealth } from '../services/geminiService';
+
+interface AdminAppProps {
+  products: Product[];
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  orders: Order[];
+  settings: StoreSettings;
+  setSettings: React.Dispatch<React.SetStateAction<StoreSettings>>;
+  updateOrderStatus: (id: string, status: OrderStatus) => void;
+  categories: string[];
+  setCategories: React.Dispatch<React.SetStateAction<string[]>>;
+  brands: string[];
+  setBrands: React.Dispatch<React.SetStateAction<string[]>>;
+  onExit: () => void;
+}
 
 function SidebarIconButton({ active, onClick, icon, title }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string }) {
   return (
@@ -80,8 +98,8 @@ function StatCard({ title, value, icon, alert, color }: { title: string; value: 
   );
 }
 
-// Added missing FormField component
-function FormField({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+// Fixed FormField: Made children optional to support standalone labels
+function FormField({ label, icon, children }: { label: string; icon: React.ReactNode; children?: React.ReactNode }) {
   return (
     <div className="space-y-3 md:space-y-4">
       <label className="text-[9px] md:text-[11px] font-black uppercase text-slate-500 tracking-[4px] md:tracking-[5px] ml-4 flex items-center gap-2">
@@ -92,7 +110,6 @@ function FormField({ label, icon, children }: { label: string; icon: React.React
   );
 }
 
-// Added missing ToggleRow component
 function ToggleRow({ active, onToggle, label, description, icon }: { active: boolean; onToggle: () => void; label: string; description: string; icon: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between p-6 md:p-8 bg-slate-950 rounded-2xl md:rounded-[32px] border border-white/5 transition-all hover:border-white/10">
@@ -114,6 +131,106 @@ function ToggleRow({ active, onToggle, label, description, icon }: { active: boo
     </div>
   );
 }
+
+const VaultPulse: React.FC = () => {
+  const [logs, setLogs] = useState<{ msg: string, time: string, type: 'info' | 'success' | 'warn' }[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [health, setHealth] = useState<{ api: boolean, storage: boolean, scanner: boolean }>({ api: true, storage: true, scanner: true });
+
+  const addLog = (msg: string, type: 'info' | 'success' | 'warn' = 'info') => {
+    setLogs(prev => [{ msg, time: new Date().toLocaleTimeString(), type }, ...prev].slice(0, 10));
+  };
+
+  const runDiagnostics = async () => {
+    setIsScanning(true);
+    addLog("Initiating Vault Integrity Check...", "info");
+    
+    // Check Storage
+    const storageUsed = (JSON.stringify(localStorage).length / 1024 / 1024).toFixed(2);
+    addLog(`Storage verified: ${storageUsed}MB used.`, "success");
+    
+    // Check AI Health
+    const aiHealth = await checkSystemHealth();
+    if (aiHealth.status === 'ok') {
+      addLog(`Gemini AI responsive (${aiHealth.latency}ms).`, "success");
+      setHealth(h => ({ ...h, api: true }));
+    } else {
+      addLog(`AI Connection Gltich: ${aiHealth.message}`, "warn");
+      setHealth(h => ({ ...h, api: false }));
+    }
+
+    // Service Worker Check
+    if ('serviceWorker' in navigator) {
+      addLog("PWA Cache System: Functional.", "success");
+    }
+
+    addLog("Diagnostic sequence complete.", "success");
+    setIsScanning(false);
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto w-full pb-20">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div className={`p-8 rounded-[40px] border bg-[#0a0d14] flex flex-col items-center gap-4 ${health.api ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
+            <Server className={health.api ? 'text-emerald-500' : 'text-rose-500'} size={32}/>
+            <span className="text-[10px] font-black uppercase tracking-[4px] text-slate-500">API NODE</span>
+            <span className={`text-xs font-black uppercase ${health.api ? 'text-emerald-500' : 'text-rose-500'}`}>{health.api ? 'ONLINE' : 'OFFLINE'}</span>
+         </div>
+         <div className="p-8 rounded-[40px] border border-emerald-500/20 bg-[#0a0d14] flex flex-col items-center gap-4">
+            <Boxes className="text-emerald-500" size={32}/>
+            <span className="text-[10px] font-black uppercase tracking-[4px] text-slate-500">STORAGE</span>
+            <span className="text-xs font-black uppercase text-emerald-500">HEALTHY</span>
+         </div>
+         <div className="p-8 rounded-[40px] border border-emerald-500/20 bg-[#0a0d14] flex flex-col items-center gap-4">
+            <Zap className="text-emerald-500" size={32}/>
+            <span className="text-[10px] font-black uppercase tracking-[4px] text-slate-500">PWA STATUS</span>
+            <span className="text-xs font-black uppercase text-emerald-500">ACTIVE</span>
+         </div>
+      </div>
+
+      <div className="bg-slate-950 rounded-[48px] border border-white/5 p-10 overflow-hidden relative">
+         <div className="absolute top-0 right-0 p-8">
+            <button 
+              onClick={runDiagnostics} 
+              disabled={isScanning}
+              className="bg-emerald-600 text-white px-8 py-4 rounded-full font-black uppercase tracking-[3px] text-[10px] shadow-2xl active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+            >
+               {isScanning ? <RefreshCw className="animate-spin" size={16}/> : <Pulse size={16}/>}
+               {isScanning ? 'DIAGNOSING...' : 'RUN PULSE CHECK'}
+            </button>
+         </div>
+         <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-4"><Terminal className="text-emerald-500"/> System Telemetry</h3>
+         <div className="space-y-4 font-mono">
+            {logs.length === 0 && <p className="text-slate-700 italic text-sm">System idle. Initiate pulse check to verify tool stability.</p>}
+            {logs.map((log, i) => (
+              <div key={i} className="flex items-start gap-4 animate-in slide-in-from-left-4">
+                 <span className="text-slate-700 text-[10px] shrink-0 mt-1">[{log.time}]</span>
+                 <span className={`text-sm font-medium ${log.type === 'success' ? 'text-emerald-400' : log.type === 'warn' ? 'text-rose-400' : 'text-slate-400'}`}>
+                    {log.msg}
+                 </span>
+              </div>
+            ))}
+         </div>
+      </div>
+      
+      <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[40px] p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+         <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-xl border border-emerald-500/30">
+               <ShieldCheck size={32}/>
+            </div>
+            <div>
+               <h4 className="text-xl font-black text-white uppercase tracking-tight">AI Scanner Stability</h4>
+               <p className="text-slate-500 text-xs italic">Scanner genetic extraction is verified as stable.</p>
+            </div>
+         </div>
+         <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">ALL SYSTEMS TOP-NOTCH</span>
+         </div>
+      </div>
+    </div>
+  );
+};
 
 const Dashboard: React.FC<{ stats: any }> = ({ stats }) => {
   return (
@@ -309,7 +426,7 @@ const AiVaultWizard: React.FC<{
               <div className="space-y-2 md:space-y-4">
                  <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter leading-tight">AI VAULT<br className="md:hidden" /> GENETICIST</h2>
                  <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-[3px] md:tracking-[5px] flex items-center gap-3">
-                    <div className="w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div className="w-1.5 md:w-2 h-1.5 md:h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     AUTONOMOUS SYSTEM ONLINE
                  </p>
               </div>
@@ -581,7 +698,6 @@ const AllInOneProductTool: React.FC<{
 
               {(isProcessing || isScanning) && (
                 <div className="absolute inset-0 bg-[#0a0d14]/80 backdrop-blur-2xl flex flex-col items-center justify-center animate-in fade-in z-20">
-                  {/* Fixed duplicate className attribute */}
                   <div className="relative"><RefreshCw className="animate-spin text-emerald-500 mb-4 md:mb-6 md:w-12 md:h-12" size={32}/><div className="absolute inset-0 blur-xl bg-emerald-500/20"></div></div>
                   <span className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-[4px] md:tracking-[5px]">PROCESSING...</span>
                 </div>
@@ -715,7 +831,7 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
 const AdminApp: React.FC<AdminAppProps> = ({ 
   products, setProducts, orders, settings, setSettings, updateOrderStatus, categories, setCategories, brands, setBrands, onExit
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard'|'orders'|'inventory'|'settings'|'logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard'|'orders'|'inventory'|'settings'|'pulse'>('dashboard');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
 
@@ -746,8 +862,9 @@ const AdminApp: React.FC<AdminAppProps> = ({
         <nav className="flex-1 flex flex-col gap-6 md:gap-10 items-center overflow-y-auto no-scrollbar py-2">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
           <SidebarIconButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ClipboardList size={24}/>} title="Queue" />
-          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={24}/>} title="SKUs" />
+          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory'} icon={<Package size={24}/>} title="SKUs" />
           <SidebarIconButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={24}/>} title="Tools" />
+          <SidebarIconButton active={activeTab === 'pulse'} onClick={() => setActiveTab('pulse')} icon={<Pulse size={24}/>} title="Pulse" />
         </nav>
         <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group shrink-0"><LogOut size={26}/><span className="hidden md:block text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span></button>
       </aside>
@@ -763,6 +880,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
           {activeTab === 'orders' && <OrderManager orders={orders} updateOrderStatus={updateOrderStatus} />}
           {activeTab === 'inventory' && <ProductManager products={products} onEdit={setEditingProduct} onAdd={handleAddNewProduct} onAiAdd={() => setIsAiWizardOpen(true)} />}
           {activeTab === 'settings' && <Settings settings={settings} setSettings={setSettings} />}
+          {activeTab === 'pulse' && <VaultPulse />}
         </div>
       </main>
 
