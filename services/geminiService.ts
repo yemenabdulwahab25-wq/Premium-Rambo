@@ -213,10 +213,13 @@ export const scanProductFromImage = async (base64Image: string, mimeType: string
             },
           },
           {
-            text: `Act as a professional cannabis product scanner. Extract product information from this packaging image. If a detail is unclear, make a best guess based on industry standards.
+            text: `Act as a professional cannabis genetics vault expert and label scanner. 
+            Analyze the product packaging image provided. Look for elite brands (e.g., Jungle Boys, Connected, Alien Labs, etc.) and specific strain names.
+            Extract product information. If a detail is unclear, make a best guess based on industry standards for elite cannabis brands.
+            
             Return a JSON object with:
-            - name: Product/Strain name (e.g. "Ice Cream Cake")
-            - brand: Brand name (e.g. "Jungle Boys")
+            - name: Product/Strain name (e.g. "Ice Cream Cake", "Lemon Cherry Gelato")
+            - brand: Brand name identified from the logo or text (e.g. "Jungle Boys")
             - thc: THC percentage as a number (e.g. 28.5)
             - type: One of "Sativa", "Indica", "Hybrid"
             - category: One of "Flowers", "Disposables", "Carts", "Pre-Rolls", "Gummies", "Edibles", "Concentrates", "Tinctures", "Drinks", "Accessories".`,

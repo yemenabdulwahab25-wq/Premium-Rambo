@@ -42,13 +42,14 @@ import {
   MessagesSquare,
   Activity,
   PlusSquare,
-  // Fix: Add missing icon imports
   Smartphone,
   Mail,
-  Gift
+  Gift,
+  Camera,
+  Scan
 } from 'lucide-react';
 import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings, CustomProtocol } from '../types';
-import { generateProductDescription, removeImageBackground } from '../services/geminiService';
+import { generateProductDescription, removeImageBackground, scanProductFromImage } from '../services/geminiService';
 
 interface AdminAppProps {
   products: Product[];
@@ -236,14 +237,17 @@ const AllInOneProductTool: React.FC<{
 }> = ({ product, categories, setCategories, brands, setBrands, onClose, onSave, onDelete }) => {
   const [data, setData] = useState<Product>(product);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [scanFeedback, setScanFeedback] = useState<string | null>(null);
   const [newCat, setNewCat] = useState('');
   const [newBrand, setNewBrand] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
   const [showAddBrand, setShowAddBrand] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
   const brandLogoInputRef = useRef<HTMLInputElement>(null);
   const initialLoad = useRef(true);
 
@@ -258,38 +262,68 @@ const AllInOneProductTool: React.FC<{
     const timer = setTimeout(() => {
       setSaveStatus('saving');
       onSave(data);
-      // Brief delay to show "Saving..." state for UX feedback
       setTimeout(() => setSaveStatus('saved'), 600);
     }, 2000);
 
     return () => clearTimeout(timer);
   }, [data, onSave]);
 
-  const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'brandLogo') => {
+  const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'brandLogo' | 'scan') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsProcessing(true);
+
+    if (field === 'scan') {
+      setIsScanning(true);
+      setScanFeedback(null);
+    } else {
+      setIsProcessing(true);
+    }
+
     const reader = new FileReader();
     reader.onload = async (event) => {
         const dataUrl = event.target?.result as string;
         const base64Data = dataUrl.split(',')[1];
         const mimeType = file.type || 'image/jpeg';
         
-        setData(prev => ({ ...prev, [field]: dataUrl }));
-
-        if (field === 'image') {
+        if (field === 'scan') {
           try {
-            const cleaned = await removeImageBackground(base64Data, mimeType);
-            if (cleaned) {
-              setData(prev => ({ ...prev, image: cleaned }));
+            const scannedData = await scanProductFromImage(base64Data, mimeType);
+            if (scannedData) {
+              setData(prev => ({
+                ...prev,
+                name: scannedData.name || prev.name,
+                brand: scannedData.brand || prev.brand,
+                thc: scannedData.thc || prev.thc,
+                category: scannedData.category || prev.category,
+                type: scannedData.type as StrainType || prev.type,
+                image: dataUrl // Keep the scanned image as product image
+              }));
+              setScanFeedback("Vault Genetics Recognized!");
+              setTimeout(() => setScanFeedback(null), 3000);
             }
           } catch (error) {
-            console.error("BG removal error:", error);
+            console.error("Smart Scan failed:", error);
+            setScanFeedback("Genetics Recognition Failed.");
+            setTimeout(() => setScanFeedback(null), 3000);
           } finally {
-            setIsProcessing(false);
+            setIsScanning(false);
           }
         } else {
-          setIsProcessing(false);
+          setData(prev => ({ ...prev, [field as any]: dataUrl }));
+          if (field === 'image') {
+            try {
+              const cleaned = await removeImageBackground(base64Data, mimeType);
+              if (cleaned) {
+                setData(prev => ({ ...prev, image: cleaned }));
+              }
+            } catch (error) {
+              console.error("BG removal error:", error);
+            } finally {
+              setIsProcessing(false);
+            }
+          } else {
+            setIsProcessing(false);
+          }
         }
     };
     reader.readAsDataURL(file);
@@ -366,19 +400,37 @@ const AllInOneProductTool: React.FC<{
           {/* 1. Visual Capture & AI Tools */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><ImageIcon size={14}/> Product Photo (AI BG Strip)</h4>
+              <div className="flex justify-between items-center ml-4">
+                <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-2"><ImageIcon size={14}/> Product Photo</h4>
+                <button 
+                  onClick={() => scanInputRef.current?.click()}
+                  className="bg-emerald-600/10 text-emerald-500 px-4 py-2 rounded-xl border border-emerald-500/20 text-[8px] font-black uppercase tracking-[3px] flex items-center gap-2 hover:bg-emerald-600 hover:text-white transition-all shadow-lg"
+                >
+                  <Camera size={12}/> Smart Scan Packaging
+                </button>
+              </div>
               <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
                 <img src={data.image} className="w-full h-full object-contain p-6 transition-transform duration-1000 group-hover:scale-110" />
-                {isProcessing && (
+                {(isProcessing || isScanning) && (
                   <div className="absolute inset-0 bg-emerald-600/90 backdrop-blur-3xl flex flex-col items-center justify-center animate-in fade-in">
                     <RefreshCw className="animate-spin text-white mb-4" size={40}/>
-                    <span className="text-[8px] font-black text-white uppercase tracking-widest">AI Scrubbing...</span>
+                    <span className="text-[8px] font-black text-white uppercase tracking-widest">
+                      {isScanning ? 'Extracting Genetics...' : 'AI Scrubbing...'}
+                    </span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Select Image</button>
+                {scanFeedback && (
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-6 py-3 rounded-full shadow-2xl border border-white/5 animate-in slide-in-from-bottom-2">
+                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                      <Check size={12}/> {scanFeedback}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                   <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Manual Photo</button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'image')} />
+                <input ref={scanInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileCapture(e, 'scan')} />
               </div>
             </div>
 
@@ -537,7 +589,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
 
   return (
     <div className="max-w-5xl space-y-16 animate-in fade-in duration-500 pb-96">
-      {/* 1. Brand Identity */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><LucideImage className="text-emerald-500" size={32}/> Brand Identity</h3>
         <div className="flex flex-col md:flex-row items-center gap-12">
@@ -554,7 +605,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
       </div>
 
-      {/* 2. Operations Master */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Globe className="text-emerald-500" size={32}/> Operations Master</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -565,7 +615,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
       </div>
 
-      {/* 3. Messaging Engine (NEW) */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <div className="flex items-center justify-between">
            <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><MessagesSquare className="text-emerald-500" size={32}/> Messaging Engine</h3>
@@ -596,7 +645,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
       </div>
 
-      {/* 4. Loyalty Architect (NEW) */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <div className="flex items-center justify-between">
            <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Ticket className="text-emerald-500" size={32}/> Loyalty Architect</h3>
@@ -615,7 +663,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </FormField>
       </div>
 
-      {/* 5. Custom Protocols (NEW TOOL LIST) */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <div className="flex items-center justify-between">
            <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><ShieldCheck className="text-emerald-500" size={32}/> Custom Protocols</h3>
@@ -643,7 +690,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
         </div>
       </div>
       
-      {/* 6. Cloud Sync */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Github className="text-slate-400" size={32}/> Cloud Sync</h3>
         {!settings.github.connected ? (
@@ -697,7 +743,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
         <nav className="flex-1 flex flex-col gap-10 items-center">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
           <SidebarIconButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ClipboardList size={24}/>} title="Queue" />
-          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={24}/>} title="SKUs" />
+          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory'} icon={<Package size={24}/>} title="SKUs" />
           <SidebarIconButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={24}/>} title="Tools" />
         </nav>
         <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group"><LogOut size={26}/><span className="text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span></button>
