@@ -42,7 +42,8 @@ import {
   Share,
   Lock,
   Sparkles,
-  Layers
+  Layers,
+  Bot
 } from 'lucide-react';
 import { Product, CartItem, StoreSettings, Order, OrderStatus, WeightPrice, PaymentMethod, PaymentStatus, OrderType, User, Address } from '../types';
 import { getCategoryIcon } from '../constants';
@@ -103,10 +104,18 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
   const [isBobbyOpen, setIsBobbyOpen] = useState(false);
   const [bobbyQuery, setBobbyQuery] = useState('');
   const [bobbyMessages, setBobbyMessages] = useState<{role: 'user'|'bot', text: string}[]>([]);
+  const [showBobbyTour, setShowBobbyTour] = useState(false);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authData, setAuthData] = useState({ name: '', phone: '', email: '' });
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('bobby_tour_complete');
+    if (!hasSeenTour) {
+      setShowBobbyTour(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (currentUser && !checkoutData.name) {
@@ -173,6 +182,35 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
     setBobbyQuery('');
     const response = await bobbyProAssistant(msg, products);
     setBobbyMessages(prev => [...prev, { role: 'bot', text: response || "Analysing genetics vault..." }]);
+  };
+
+  const handleShare = async (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation();
+    const shareData = {
+      title: `${product.name} | Premium Rambo`,
+      text: `Check out this exotic ${product.name} strain by ${product.brand} at Premium Rambo!`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.debug("Share failed or cancelled", err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Transmission link copied to vault clipboard!");
+      } catch (err) {
+        console.error("Copy failed", err);
+      }
+    }
+  };
+
+  const dismissBobbyTour = () => {
+    setShowBobbyTour(false);
+    localStorage.setItem('bobby_tour_complete', 'true');
   };
 
   const handleCheckout = () => {
@@ -305,12 +343,20 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                     const isFavorite = favorites.includes(product.id);
                     return (
                       <div key={product.id} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all flex flex-col group relative">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
-                          className={`absolute top-4 right-4 z-10 p-2 rounded-full backdrop-blur-md transition-all active:scale-75 ${isFavorite ? 'bg-rose-500/20 text-rose-500' : 'bg-white/40 text-slate-400 hover:text-rose-400'}`}
-                        >
-                          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} strokeWidth={2.5} />
-                        </button>
+                        <div className="absolute top-4 right-4 z-10 flex gap-2">
+                          <button 
+                            onClick={(e) => handleShare(e, product)}
+                            className="p-2 rounded-full backdrop-blur-md bg-white/40 text-slate-900 hover:text-emerald-500 transition-all active:scale-75 border border-white/50"
+                          >
+                            <Share size={18} strokeWidth={2.5} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
+                            className={`p-2 rounded-full backdrop-blur-md transition-all active:scale-75 ${isFavorite ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30 shadow-lg shadow-rose-500/20' : 'bg-white/40 text-slate-400 hover:text-rose-400 border border-white/50'}`}
+                          >
+                            <Heart size={18} fill={isFavorite ? "currentColor" : "none"} strokeWidth={2.5} />
+                          </button>
+                        </div>
                         
                         <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="aspect-[4/5] relative overflow-hidden bg-slate-50 cursor-pointer">
                           <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 duration-700" />
@@ -366,12 +412,20 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
               
               <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-10">
                 <button onClick={() => setSelectedProduct(null)} className="bg-white/40 backdrop-blur-3xl p-4 rounded-[32px] text-slate-900 active:scale-90 border border-white/50"><ArrowLeft size={28} /></button>
-                <button 
-                  onClick={() => toggleFavorite(selectedProduct.id)}
-                  className={`p-4 rounded-[32px] backdrop-blur-3xl border active:scale-90 transition-all ${favorites.includes(selectedProduct.id) ? 'bg-rose-500 text-white border-rose-400 shadow-xl' : 'bg-white/40 text-slate-900 border-white/50'}`}
-                >
-                  <Heart size={28} fill={favorites.includes(selectedProduct.id) ? "currentColor" : "none"} strokeWidth={2.5} />
-                </button>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={(e) => handleShare(e, selectedProduct)}
+                    className="p-4 rounded-[32px] backdrop-blur-3xl border active:scale-90 transition-all bg-white/40 text-slate-900 border-white/50"
+                  >
+                    <Share size={28} strokeWidth={2.5} />
+                  </button>
+                  <button 
+                    onClick={() => toggleFavorite(selectedProduct.id)}
+                    className={`p-4 rounded-[32px] backdrop-blur-3xl border active:scale-90 transition-all ${favorites.includes(selectedProduct.id) ? 'bg-rose-500 text-white border-rose-400 shadow-xl' : 'bg-white/40 text-slate-900 border-white/50'}`}
+                  >
+                    <Heart size={28} fill={favorites.includes(selectedProduct.id) ? "currentColor" : "none"} strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="p-8 max-w-4xl mx-auto space-y-12">
@@ -516,7 +570,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-3xl" onClick={() => setIsAuthModalOpen(false)}></div>
-          <div className="relative w-full max-w-sm bg-white rounded-[64px] p-12 shadow-2xl animate-in zoom-in-95 duration-500 border border-slate-100">
+          <div className="relative w-full max-sm bg-white rounded-[64px] p-12 shadow-2xl animate-in zoom-in-95 duration-500 border border-slate-100">
             <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-12 text-center leading-none">{authMode === 'login' ? 'Vault Entry' : 'New Member'}</h3>
             <div className="space-y-10">
               {authMode === 'register' && (
@@ -543,14 +597,91 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
       <div className={`fixed bottom-36 right-8 z-[150] transition-all duration-700 ${isBobbyOpen ? 'w-full max-w-[440px] h-[720px] bottom-10 px-4' : 'w-16 h-16'}`}>
         {isBobbyOpen ? (
           <div className="bg-white rounded-[72px] shadow-2xl flex flex-col h-full border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-24 duration-700">
-            <div className="bg-slate-900 p-12 text-white flex items-center justify-between"><div className="flex items-center gap-4"><Zap size={28} fill="currentColor" className="text-emerald-500"/><span className="font-black text-2xl tracking-tighter uppercase">Bobby Pro AI</span></div><button onClick={() => setIsBobbyOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition-all"><Minus size={28} /></button></div>
-            <div className="flex-1 overflow-y-auto p-12 space-y-10 bg-slate-50/50 custom-scrollbar">
-              <div className="p-8 rounded-[44px] text-base font-black bg-white text-slate-900 mr-12 shadow-sm border border-slate-100 leading-relaxed">Vault analytics active. What premium genetics are you tracking today?</div>
-              {bobbyMessages.map((m, idx) => (<div key={idx} className={`p-8 rounded-[48px] text-base font-black shadow-xl leading-relaxed ${m.role === 'user' ? 'bg-emerald-600 text-white ml-12' : 'bg-white text-slate-900 mr-12 border border-slate-100'}`}>{m.text}</div>))}
+            <div className="bg-slate-900 p-12 text-white flex items-center justify-between relative">
+              <div className="flex items-center gap-4">
+                <Zap size={28} fill="currentColor" className="text-emerald-500"/>
+                <span className="font-black text-2xl tracking-tighter uppercase">Bobby Pro AI</span>
+              </div>
+              <button onClick={() => setIsBobbyOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition-all">
+                <Minus size={28} />
+              </button>
             </div>
+            
+            <div className="flex-1 overflow-y-auto p-12 space-y-10 bg-slate-50/50 custom-scrollbar relative">
+              {showBobbyTour && (
+                <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-xl z-20 p-12 flex flex-col animate-in fade-in duration-500">
+                  <div className="flex-1 flex flex-col justify-center space-y-12">
+                    <div className="w-20 h-20 bg-emerald-500 rounded-[32px] flex items-center justify-center text-white shadow-[0_0_40px_rgba(16,185,129,0.4)] animate-pulse">
+                      <Bot size={40} />
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Vault Operations Briefing</h3>
+                      <p className="text-emerald-500 font-black uppercase tracking-[4px] text-[10px]">Authorized Personnel Only</p>
+                    </div>
+                    <div className="space-y-8">
+                      <div className="flex gap-6">
+                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-emerald-500 shrink-0 border border-white/10"><Layers size={24}/></div>
+                        <div>
+                          <h4 className="text-white font-black text-lg uppercase tracking-tight">Genetic Profiling</h4>
+                          <p className="text-slate-400 text-sm font-medium">Deep analysis of terpenes, effects, and lineage matching.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-6">
+                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-emerald-500 shrink-0 border border-white/10"><Sparkles size={24}/></div>
+                        <div>
+                          <h4 className="text-white font-black text-lg uppercase tracking-tight">Vault Recommendations</h4>
+                          <p className="text-slate-400 text-sm font-medium">Personalized suggestions synced with current exotic inventory.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-6">
+                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-emerald-500 shrink-0 border border-white/10"><Zap size={24}/></div>
+                        <div>
+                          <h4 className="text-white font-black text-lg uppercase tracking-tight">Effect Mapping</h4>
+                          <p className="text-slate-400 text-sm font-medium">Find the perfect genetics for your desired cognitive state.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={dismissBobbyTour}
+                    className="w-full bg-emerald-600 text-white font-black py-7 rounded-[40px] uppercase tracking-[8px] text-[12px] shadow-2xl active:scale-95 transition-all mt-12"
+                  >
+                    AUTHORIZE ACCESS
+                  </button>
+                </div>
+              )}
+              
+              {!showBobbyTour && (
+                <>
+                  <div className="p-8 rounded-[44px] text-base font-black bg-white text-slate-900 mr-12 shadow-sm border border-slate-100 leading-relaxed">
+                    Vault analytics active. What premium genetics are you tracking today?
+                  </div>
+                  {bobbyMessages.map((m, idx) => (
+                    <div key={idx} className={`p-8 rounded-[48px] text-base font-black shadow-xl leading-relaxed ${m.role === 'user' ? 'bg-emerald-600 text-white ml-12' : 'bg-white text-slate-900 mr-12 border border-slate-100'}`}>
+                      {m.text}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+            
             <div className="p-10 border-t bg-white flex gap-6">
-              <input type="text" placeholder="Ask about strain effects..." className="flex-1 bg-slate-100 border-none rounded-[36px] px-10 py-7 text-base font-black outline-none text-slate-950 placeholder:text-slate-300" value={bobbyQuery} onChange={e => setBobbyQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleBobbyAsk()} />
-              <button onClick={handleBobbyAsk} className="bg-slate-900 text-white p-7 rounded-[36px] shadow-2xl active:scale-90 transition-all"><ChevronRight size={28} /></button>
+              <input 
+                disabled={showBobbyTour}
+                type="text" 
+                placeholder="Ask about strain effects..." 
+                className="flex-1 bg-slate-100 border-none rounded-[36px] px-10 py-7 text-base font-black outline-none text-slate-950 placeholder:text-slate-300 disabled:opacity-50" 
+                value={bobbyQuery} 
+                onChange={e => setBobbyQuery(e.target.value)} 
+                onKeyDown={e => e.key === 'Enter' && handleBobbyAsk()} 
+              />
+              <button 
+                disabled={showBobbyTour}
+                onClick={handleBobbyAsk} 
+                className="bg-slate-900 text-white p-7 rounded-[36px] shadow-2xl active:scale-90 transition-all disabled:opacity-50"
+              >
+                <ChevronRight size={28} />
+              </button>
             </div>
           </div>
         ) : (
