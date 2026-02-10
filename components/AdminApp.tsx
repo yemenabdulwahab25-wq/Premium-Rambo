@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Package, 
@@ -57,75 +56,68 @@ import {
 import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings, CustomProtocol } from '../types';
 import { generateProductDescription, removeImageBackground, aiInventoryWizard } from '../services/geminiService';
 
-interface AdminAppProps {
-  products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
-  orders: Order[];
-  settings: StoreSettings;
-  setSettings: React.Dispatch<React.SetStateAction<StoreSettings>>;
-  updateOrderStatus: (id: string, status: OrderStatus) => void;
-  categories: string[];
-  setCategories: React.Dispatch<React.SetStateAction<string[]>>;
-  brands: string[];
-  setBrands: React.Dispatch<React.SetStateAction<string[]>>;
-  onExit: () => void;
-}
-
 function SidebarIconButton({ active, onClick, icon, title }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string }) {
   return (
-    <button onClick={onClick} className={`w-16 h-16 flex flex-col items-center justify-center rounded-2xl transition-all relative group cursor-pointer ${active ? 'bg-emerald-500 text-white shadow-xl scale-110' : 'text-slate-700 hover:text-slate-300 hover:bg-slate-900/50'}`}>
-      {active && <div className="absolute -left-5 w-1.5 h-8 bg-emerald-500 rounded-r-full shadow-[0_0_15px_#10b981]"></div>}
-      <div className="mb-1">{icon}</div>
-      <span className={`text-[7px] font-black uppercase tracking-widest ${active ? 'text-white' : 'opacity-40'}`}>{title}</span>
+    <button onClick={onClick} className={`w-14 h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-xl md:rounded-2xl transition-all relative group cursor-pointer ${active ? 'bg-emerald-500 text-white shadow-xl scale-105 md:scale-110' : 'text-slate-700 hover:text-slate-300 hover:bg-slate-900/50'}`}>
+      {active && <div className="absolute -left-3 md:-left-5 w-1.5 h-6 md:h-8 bg-emerald-500 rounded-r-full shadow-[0_0_15px_#10b981]"></div>}
+      <div className="mb-0.5 md:mb-1">{icon}</div>
+      <span className={`text-[6px] md:text-[7px] font-black uppercase tracking-widest ${active ? 'text-white' : 'opacity-40'}`}>{title}</span>
     </button>
   );
 }
 
 function StatCard({ title, value, icon, alert, color }: { title: string; value: any; icon: React.ReactNode; color: string; alert?: boolean }) {
   return (
-    <div className={`bg-[#0a0d14] border border-slate-900 p-10 rounded-[48px] shadow-2xl relative overflow-hidden transition-all hover:scale-[1.02]`}>
-      <div className={`absolute top-0 right-0 w-32 h-32 bg-${color}-500/5 blur-[80px] rounded-full`}></div>
-      <div className="flex items-center justify-between mb-10 relative z-10">
-        <span className="text-slate-500 text-[10px] font-black uppercase tracking-[4px]">{title}</span>
-        <div className={`w-12 h-12 rounded-2xl bg-${color}-500/10 flex items-center justify-center text-${color}-500`}>{icon}</div>
+    <div className={`bg-[#0a0d14] border border-slate-900 p-6 md:p-10 rounded-[32px] md:rounded-[48px] shadow-2xl relative overflow-hidden transition-all hover:scale-[1.02]`}>
+      <div className={`absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-${color}-500/5 blur-[60px] rounded-full`}></div>
+      <div className="flex items-center justify-between mb-6 md:mb-10 relative z-10">
+        <span className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-[3px] md:tracking-[4px]">{title}</span>
+        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-${color}-500/10 flex items-center justify-center text-${color}-500`}>{icon}</div>
       </div>
-      <div className="text-5xl font-black text-white relative z-10 tracking-tighter">{value}</div>
-      {alert && <div className="mt-8 flex items-center gap-2 relative z-10 animate-pulse"><span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_orange]"></span><span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Attention Required</span></div>}
+      <div className="text-3xl md:text-5xl font-black text-white relative z-10 tracking-tighter">{value}</div>
+      {alert && <div className="mt-4 md:mt-8 flex items-center gap-2 relative z-10 animate-pulse"><span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-orange-500 shadow-[0_0_10px_orange]"></span><span className="text-[8px] md:text-[10px] font-black text-orange-500 uppercase tracking-widest">Attention</span></div>}
     </div>
   );
 }
 
-function FormField({ label, icon, children }: { label: string; icon: React.ReactNode; children?: React.ReactNode }) {
+// Added missing FormField component
+function FormField({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="space-y-4">
-      <label className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2">{icon} {label}</label>
-      <div className="relative">
-        {children}
-      </div>
+    <div className="space-y-3 md:space-y-4">
+      <label className="text-[9px] md:text-[11px] font-black uppercase text-slate-500 tracking-[4px] md:tracking-[5px] ml-4 flex items-center gap-2">
+        {icon} {label}
+      </label>
+      {children}
     </div>
   );
 }
 
-function ToggleRow({ active, onToggle, label, description, icon }: { active: boolean; onToggle: () => void; label: string; description: string; icon?: React.ReactNode }) {
+// Added missing ToggleRow component
+function ToggleRow({ active, onToggle, label, description, icon }: { active: boolean; onToggle: () => void; label: string; description: string; icon: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between group cursor-pointer" onClick={(e) => { e.preventDefault(); onToggle(); }}>
-      <div className="flex-1 pr-10">
-         <div className="flex items-center gap-3">
-            {icon && <div className={active ? 'text-emerald-500' : 'text-slate-700'}>{icon}</div>}
-            <h4 className={`font-black text-xl transition-colors ${active ? 'text-white' : 'text-slate-800'} tracking-tighter`}>{label}</h4>
-         </div>
-         <p className="text-[10px] text-slate-700 font-bold mt-1 tracking-widest uppercase">{description}</p>
+    <div className="flex items-center justify-between p-6 md:p-8 bg-slate-950 rounded-2xl md:rounded-[32px] border border-white/5 transition-all hover:border-white/10">
+      <div className="flex items-center gap-4 md:gap-6">
+        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center ${active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-900 text-slate-700'}`}>
+          {icon}
+        </div>
+        <div>
+          <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight">{label}</h4>
+          <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">{description}</p>
+        </div>
       </div>
-      <div className={`w-20 h-10 rounded-full p-1.5 transition-all duration-500 relative border-2 shrink-0 ${active ? 'bg-emerald-600 border-emerald-400' : 'bg-slate-950 border-slate-900'}`}>
-        <div className={`w-6 h-6 bg-white rounded-full transition-all duration-500 shadow-2xl relative z-10 ${active ? 'translate-x-10' : 'translate-x-0'}`}></div>
-      </div>
+      <button 
+        onClick={onToggle} 
+        className={`w-12 md:w-16 h-6 md:h-8 rounded-full relative transition-all duration-300 shadow-inner ${active ? 'bg-emerald-600' : 'bg-slate-800'}`}
+      >
+        <div className={`absolute top-1 w-4 md:w-6 h-4 md:h-6 bg-white rounded-full transition-all duration-300 shadow-md ${active ? 'translate-x-6 md:translate-x-8' : 'translate-x-1'}`}></div>
+      </button>
     </div>
   );
 }
 
 const Dashboard: React.FC<{ stats: any }> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 animate-in fade-in duration-500">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 animate-in fade-in duration-500 max-w-screen-2xl mx-auto w-full">
       <StatCard title="Total Revenue" value={`$${stats.todayRevenue.toFixed(2)}`} icon={<TrendingUp size={24}/>} color="emerald" />
       <StatCard title="Active Orders" value={stats.pendingOrders} icon={<ClipboardList size={24}/>} color="blue" alert={stats.pendingOrders > 0} />
       <StatCard title="Low Inventory" value={stats.lowStock} icon={<AlertTriangle size={24}/>} color="orange" alert={stats.lowStock > 0} />
@@ -136,40 +128,40 @@ const Dashboard: React.FC<{ stats: any }> = ({ stats }) => {
 
 const OrderManager: React.FC<{ orders: Order[]; updateOrderStatus: (id: string, status: OrderStatus) => void }> = ({ orders, updateOrderStatus }) => {
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20 max-w-screen-xl mx-auto w-full">
       {orders.length === 0 ? (
-        <div className="py-40 text-center opacity-20 flex flex-col items-center">
-          <ClipboardList size={80} className="mb-6" />
-          <p className="font-black uppercase tracking-[8px]">Queue Empty</p>
+        <div className="py-20 md:py-40 text-center opacity-20 flex flex-col items-center">
+          <ClipboardList size={60} className="md:size-[80px] mb-6" />
+          <p className="font-black uppercase tracking-[6px] md:tracking-[8px]">Queue Empty</p>
         </div>
       ) : (
         orders.map(order => (
-          <div key={order.id} className="bg-[#0a0d14] border border-slate-900 rounded-[48px] p-10 flex flex-col md:flex-row items-center justify-between gap-10 hover:border-emerald-500/30 transition-all">
-            <div className="flex items-center gap-8">
-               <div className="w-20 h-20 rounded-[32px] bg-slate-950 flex flex-col items-center justify-center border border-white/5">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">ID</span>
-                  <span className="text-white font-black text-sm uppercase">#{order.id.slice(0, 4)}</span>
+          <div key={order.id} className="bg-[#0a0d14] border border-slate-900 rounded-[32px] md:rounded-[48px] p-6 md:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-10 hover:border-emerald-500/30 transition-all">
+            <div className="flex items-center gap-4 md:gap-8 w-full lg:w-auto">
+               <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-[32px] bg-slate-950 flex flex-col items-center justify-center border border-white/5 shrink-0">
+                  <span className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">ID</span>
+                  <span className="text-white font-black text-xs md:text-sm uppercase">#{order.id.slice(0, 4)}</span>
                </div>
                <div>
-                  <h4 className="text-2xl font-black text-white tracking-tighter">{order.customerName}</h4>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Clock size={12}/> {order.pickupTime}</span>
-                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{order.orderType}</span>
+                  <h4 className="text-xl md:text-2xl font-black text-white tracking-tighter">{order.customerName}</h4>
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-1 md:mt-2">
+                    <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5 md:gap-2"><Clock size={12}/> {order.pickupTime}</span>
+                    <span className="text-[8px] md:text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{order.orderType}</span>
                   </div>
                </div>
             </div>
 
-            <div className="flex items-center gap-8">
-               <div className="text-right">
-                  <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Value</span>
-                  <span className="text-3xl font-black text-white">${order.total.toFixed(2)}</span>
+            <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-8 w-full lg:w-auto">
+               <div className="text-center lg:text-right w-full sm:w-auto">
+                  <span className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Value</span>
+                  <span className="text-2xl md:text-3xl font-black text-white">${order.total.toFixed(2)}</span>
                </div>
-               <div className="flex gap-3">
+               <div className="grid grid-cols-2 sm:flex gap-2 md:gap-3 w-full sm:w-auto">
                   {Object.values(OrderStatus).map(status => (
                     <button 
                       key={status} 
                       onClick={() => updateOrderStatus(order.id, status)}
-                      className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${order.status === status ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 text-slate-600 hover:text-white'}`}
+                      className={`px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all ${order.status === status ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 text-slate-600 hover:text-white'}`}
                     >
                       {status}
                     </button>
@@ -185,54 +177,54 @@ const OrderManager: React.FC<{ orders: Order[]; updateOrderStatus: (id: string, 
 
 const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => void; onAdd: () => void; onAiAdd: () => void }> = ({ products, onEdit, onAdd, onAiAdd }) => {
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-20">
-      <div className="flex justify-between items-center">
-        <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[6px]">Active Vault Inventory ({products.length})</h3>
-        <div className="flex gap-4">
-           <button onClick={onAiAdd} className="bg-slate-900 text-emerald-400 px-8 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 border border-emerald-500/20 shadow-xl hover:bg-emerald-600 hover:text-white transition-all group">
+    <div className="space-y-6 md:space-y-10 animate-in fade-in duration-500 pb-20 max-w-screen-2xl mx-auto w-full">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <h3 className="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-[4px] md:tracking-[6px] ml-2">Active Vault Inventory ({products.length})</h3>
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
+           <button onClick={onAiAdd} className="bg-slate-900 text-emerald-400 px-6 md:px-8 py-4 md:py-5 rounded-2xl md:rounded-[28px] font-black uppercase tracking-[3px] md:tracking-[4px] text-[9px] md:text-[11px] flex items-center justify-center gap-3 border border-emerald-500/20 shadow-xl hover:bg-emerald-600 hover:text-white transition-all group w-full sm:w-auto">
             <BrainCircuit size={18} className="group-hover:animate-pulse" /> AI VAULT GENETICIST
           </button>
-          <button onClick={onAdd} className="bg-slate-900 text-white px-8 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 border border-slate-800 shadow-xl transition-all">
+          <button onClick={onAdd} className="bg-slate-900 text-white px-6 md:px-8 py-4 md:py-5 rounded-2xl md:rounded-[28px] font-black uppercase tracking-[3px] md:tracking-[4px] text-[9px] md:text-[11px] flex items-center justify-center gap-3 border border-slate-800 shadow-xl transition-all w-full sm:w-auto">
             <Plus size={18} /> Manual SKU
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 md:gap-8">
         {products.map(product => {
           const totalStock = product.weights.reduce((sum, w) => sum + w.stock, 0);
           return (
-            <div key={product.id} onClick={() => onEdit(product)} className="bg-[#0a0d14] border border-slate-900 rounded-[56px] overflow-hidden group cursor-pointer hover:border-emerald-500/30 transition-all shadow-2xl relative">
+            <div key={product.id} onClick={() => onEdit(product)} className="bg-[#0a0d14] border border-slate-900 rounded-[32px] md:rounded-[56px] overflow-hidden group cursor-pointer hover:border-emerald-500/30 transition-all shadow-2xl relative">
               <div className="aspect-[4/3] relative bg-slate-950 overflow-hidden">
                 {product.image ? (
-                  <img src={product.image} className="w-full h-full object-contain p-8 group-hover:scale-110 duration-1000" />
+                  <img src={product.image} className="w-full h-full object-contain p-6 md:p-8 group-hover:scale-110 duration-1000" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-slate-800 gap-4">
-                     <ImageIcon size={64}/>
-                     <span className="text-[8px] font-black uppercase tracking-widest">No Genetics Image</span>
+                     <ImageIcon size={48} className="md:size-16" />
+                     <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest">No Genetics Image</span>
                   </div>
                 )}
-                <div className="absolute top-6 left-6 flex gap-2">
-                  <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-black flex items-center gap-2 border border-white/5 shadow-2xl"><img src={product.brandLogo} className="w-4 h-4 rounded-full" /> {product.brand}</div>
-                  <div className={`px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl ${product.isPublished ? 'bg-emerald-600' : 'bg-rose-600'}`}>{product.isPublished ? 'LIVE' : 'HIDDEN'}</div>
+                <div className="absolute top-4 md:top-6 left-4 md:left-6 flex gap-2">
+                  <div className="bg-white/95 backdrop-blur-xl px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[7px] md:text-[8px] font-black text-black flex items-center gap-1.5 md:gap-2 border border-white/5 shadow-2xl"><img src={product.brandLogo} className="w-3 md:w-4 h-3 md:h-4 rounded-full" /> {product.brand}</div>
+                  <div className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-[7px] md:text-[8px] font-black text-white border border-white/5 shadow-2xl ${product.isPublished ? 'bg-emerald-600' : 'bg-rose-600'}`}>{product.isPublished ? 'LIVE' : 'HIDDEN'}</div>
                 </div>
               </div>
-              <div className="p-10">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="text-xl font-black text-white leading-tight tracking-tight">{product.name}</h4>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{product.category} • {product.type}</p>
+              <div className="p-6 md:p-10">
+                <div className="flex justify-between items-start mb-3 md:mb-4">
+                  <div className="max-w-[70%]">
+                    <h4 className="text-lg md:text-xl font-black text-white leading-tight tracking-tight truncate">{product.name}</h4>
+                    <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{product.category} • {product.type}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-emerald-500 font-black text-xl">${Math.min(...product.weights.map(w => w.price))}</span>
+                    <span className="text-emerald-500 font-black text-lg md:text-xl">${Math.min(...product.weights.map(w => w.price))}</span>
                   </div>
                 </div>
-                <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                <div className="pt-4 md:pt-6 border-t border-white/5 flex items-center justify-between">
                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${totalStock < 10 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-emerald-500'}`}></div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{totalStock} UNITS IN VAULT</span>
+                      <div className={`w-1.5 md:w-2 h-1.5 md:h-2 rounded-full ${totalStock < 10 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-emerald-500'}`}></div>
+                      <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">{totalStock} UNITS</span>
                    </div>
-                   <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{product.thc}% THC</div>
+                   <div className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">{product.thc}% THC</div>
                 </div>
               </div>
             </div>
@@ -305,61 +297,59 @@ const AiVaultWizard: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-6">
       <div className="absolute inset-0 bg-[#05070a]/98 backdrop-blur-3xl" onClick={onClose}></div>
-      <div className="relative w-full max-w-2xl bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col shadow-[0_0_120px_rgba(0,0,0,1)] animate-in zoom-in-95 duration-500">
-        
-        {/* Animated Scanner Grid Backdrop */}
+      <div className="relative w-full max-w-4xl bg-[#0a0d14] rounded-[32px] md:rounded-[64px] border border-white/5 overflow-hidden flex flex-col shadow-[0_0_120px_rgba(0,0,0,1)] animate-in zoom-in-95 duration-500 max-h-[95vh]">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
            <div className="w-full h-full bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:40px_40px]"></div>
         </div>
 
-        <div className="p-12 pb-8 border-b border-white/5 relative z-10">
+        <div className="p-6 md:p-12 pb-4 md:pb-8 border-b border-white/5 relative z-10">
            <div className="flex justify-between items-start">
-              <div className="space-y-4">
-                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">AI VAULT<br/>GENETICIST</h2>
-                 <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[5px] flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <div className="space-y-2 md:space-y-4">
+                 <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter leading-tight">AI VAULT<br className="md:hidden" /> GENETICIST</h2>
+                 <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-[3px] md:tracking-[5px] flex items-center gap-3">
+                    <div className="w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                     AUTONOMOUS SYSTEM ONLINE
                  </p>
               </div>
-              <button onClick={onClose} className="p-4 bg-slate-900 text-slate-500 rounded-full hover:text-white transition-all"><X size={28}/></button>
+              <button onClick={onClose} className="p-3 md:p-4 bg-slate-900 text-slate-500 rounded-full hover:text-white transition-all"><X size={20} className="md:size-[28px]"/></button>
            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-12 space-y-12 relative z-10 custom-scrollbar no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 md:space-y-12 relative z-10 custom-scrollbar no-scrollbar">
           {!extractedData ? (
-            <div className="space-y-10">
-               <div className="grid grid-cols-2 gap-6">
-                  <button onClick={() => setInputMethod('text')} className={`p-8 rounded-[40px] border transition-all flex flex-col items-center gap-4 ${inputMethod === 'text' ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-500' : 'bg-slate-950 border-white/5 text-slate-600'}`}>
-                     <MessageSquare size={32}/>
-                     <span className="text-[10px] font-black uppercase tracking-widest">Text Logic</span>
+            <div className="space-y-6 md:space-y-10">
+               <div className="grid grid-cols-2 gap-4 md:gap-6">
+                  <button onClick={() => setInputMethod('text')} className={`p-6 md:p-8 rounded-2xl md:rounded-[40px] border transition-all flex flex-col items-center gap-3 md:gap-4 ${inputMethod === 'text' ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-500' : 'bg-slate-950 border-white/5 text-slate-600'}`}>
+                     <MessageSquare size={24} className="md:size-[32px]"/>
+                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Text Logic</span>
                   </button>
-                  <button onClick={() => fileInputRef.current?.click()} className={`p-8 rounded-[40px] border transition-all flex flex-col items-center gap-4 ${inputMethod === 'image' ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-500' : 'bg-slate-950 border-white/5 text-slate-600'}`}>
-                     <Camera size={32}/>
-                     <span className="text-[10px] font-black uppercase tracking-widest">Visual DNA</span>
+                  <button onClick={() => fileInputRef.current?.click()} className={`p-6 md:p-8 rounded-2xl md:rounded-[40px] border transition-all flex flex-col items-center gap-3 md:gap-4 ${inputMethod === 'image' ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-500' : 'bg-slate-950 border-white/5 text-slate-600'}`}>
+                     <Camera size={24} className="md:size-[32px]"/>
+                     <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Visual DNA</span>
                   </button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
                </div>
 
                {inputMethod === 'text' ? (
-                 <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[5px] ml-4">Product Transmission Narrative</label>
+                 <div className="space-y-3 md:space-y-4">
+                    <label className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[4px] md:tracking-[5px] ml-4">Product Transmission Narrative</label>
                     <textarea 
                       value={textInput}
                       onChange={e => setTextInput(e.target.value)}
                       placeholder="Ex: 'Add 5 units of Connected Gushers, Hybrid, 28% THC, $60 per 3.5g'"
-                      className="w-full bg-slate-950 border border-white/5 p-10 rounded-[48px] text-white font-medium text-lg min-h-[160px] outline-none focus:border-emerald-500 transition-all leading-relaxed" 
+                      className="w-full bg-slate-950 border border-white/5 p-6 md:p-10 rounded-2xl md:rounded-[48px] text-white font-medium text-base md:text-lg min-h-[120px] md:min-h-[160px] outline-none focus:border-emerald-500 transition-all leading-relaxed" 
                     />
                  </div>
                ) : (
-                 <div className="aspect-video relative bg-slate-950 rounded-[48px] border border-white/5 overflow-hidden flex items-center justify-center">
+                 <div className="aspect-video relative bg-slate-950 rounded-2xl md:rounded-[48px] border border-white/5 overflow-hidden flex items-center justify-center">
                     {imagePreview ? (
-                      <img src={imagePreview} className="w-full h-full object-contain p-8" />
+                      <img src={imagePreview} className="w-full h-full object-contain p-4 md:p-8" />
                     ) : (
                       <div className="flex flex-col items-center gap-4 text-slate-700">
-                        <ImageIcon size={64}/>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Capture DNA Packaging</span>
+                        <ImageIcon size={48} className="md:size-[64px]" />
+                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Capture DNA Packaging</span>
                       </div>
                     )}
                     {isProcessing && <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-sm animate-pulse"></div>}
@@ -369,58 +359,58 @@ const AiVaultWizard: React.FC<{
                <button 
                 onClick={handleProcess} 
                 disabled={isProcessing || (inputMethod === 'text' ? !textInput : !imagePreview)}
-                className="w-full bg-emerald-600 text-white py-8 rounded-[48px] font-black uppercase tracking-[8px] text-[13px] shadow-2xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4"
+                className="w-full bg-emerald-600 text-white py-6 md:py-8 rounded-2xl md:rounded-[48px] font-black uppercase tracking-[6px] md:tracking-[8px] text-[11px] md:text-[13px] shadow-2xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4"
                >
                  {isProcessing ? <RefreshCw className="animate-spin" size={20}/> : <Cpu size={20}/>}
                  {isProcessing ? 'DECODING GENETICS...' : 'AUTHORIZE AI ANALYSIS'}
                </button>
             </div>
           ) : (
-            <div className="space-y-10 animate-in fade-in duration-500">
-               <div className="flex items-center gap-6 p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[40px]">
-                  <div className="w-16 h-16 bg-emerald-500 rounded-[28px] flex items-center justify-center text-white"><Check size={32}/></div>
+            <div className="space-y-8 md:space-y-10 animate-in fade-in duration-500">
+               <div className="flex items-center gap-4 md:gap-6 p-6 md:p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl md:rounded-[40px]">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-emerald-500 rounded-xl md:rounded-[28px] flex items-center justify-center text-white shrink-0"><Check size={24} className="md:size-[32px]"/></div>
                   <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight uppercase">Genetics Decoded</h3>
-                    <p className="text-[9px] text-emerald-500 font-black uppercase tracking-[4px]">High Confidence Match</p>
+                    <h3 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase">Genetics Decoded</h3>
+                    <p className="text-[8px] md:text-[9px] text-emerald-500 font-black uppercase tracking-[4px]">High Confidence Match</p>
                   </div>
                </div>
 
-               <div className="space-y-8">
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Strain Name</span>
-                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">{extractedData.name}</div>
+               <div className="space-y-6 md:space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                    <div className="space-y-1 md:space-y-2">
+                       <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Strain Name</span>
+                       <div className="bg-slate-950 p-4 md:p-6 rounded-xl md:rounded-[28px] border border-white/5 text-white font-black truncate">{extractedData.name}</div>
                     </div>
-                    <div className="space-y-2">
-                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Brand Owner</span>
-                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">{extractedData.brand}</div>
+                    <div className="space-y-1 md:space-y-2">
+                       <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Brand Owner</span>
+                       <div className="bg-slate-950 p-4 md:p-6 rounded-xl md:rounded-[28px] border border-white/5 text-white font-black truncate">{extractedData.brand}</div>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">THC %</span>
-                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-emerald-500 font-black">{extractedData.thc}%</div>
+                  <div className="grid grid-cols-3 gap-3 md:gap-6">
+                    <div className="space-y-1 md:space-y-2">
+                       <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">THC %</span>
+                       <div className="bg-slate-950 p-4 md:p-6 rounded-xl md:rounded-[28px] border border-white/5 text-emerald-500 font-black text-center">{extractedData.thc}%</div>
                     </div>
-                    <div className="space-y-2">
-                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Type</span>
-                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">{extractedData.type}</div>
+                    <div className="space-y-1 md:space-y-2">
+                       <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Type</span>
+                       <div className="bg-slate-950 p-4 md:p-6 rounded-xl md:rounded-[28px] border border-white/5 text-white font-black text-center">{extractedData.type}</div>
                     </div>
-                    <div className="space-y-2">
-                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Price Est.</span>
-                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">${extractedData.weights?.[0]?.price}</div>
+                    <div className="space-y-1 md:space-y-2">
+                       <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Price Est.</span>
+                       <div className="bg-slate-950 p-4 md:p-6 rounded-xl md:rounded-[28px] border border-white/5 text-white font-black text-center">${extractedData.weights?.[0]?.price}</div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Narrative DNA</span>
-                    <div className="bg-slate-950 p-8 rounded-[36px] border border-white/5 text-slate-400 text-sm italic font-medium">"{extractedData.description}"</div>
+                  <div className="space-y-1 md:space-y-2">
+                    <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Narrative DNA</span>
+                    <div className="bg-slate-950 p-6 md:p-8 rounded-2xl md:rounded-[36px] border border-white/5 text-slate-400 text-xs md:text-sm italic font-medium leading-relaxed">"{extractedData.description}"</div>
                   </div>
                </div>
 
-               <div className="flex gap-4">
-                  <button onClick={() => setExtractedData(null)} className="flex-1 py-7 bg-slate-900 text-slate-500 rounded-[40px] font-black uppercase tracking-[4px] text-[10px]">Re-Analyze</button>
-                  <button onClick={handleConfirm} className="flex-[2] py-7 bg-emerald-600 text-white rounded-[40px] font-black uppercase tracking-[6px] text-[11px] shadow-2xl">Confirm Vault Entry</button>
+               <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                  <button onClick={() => setExtractedData(null)} className="w-full md:flex-1 py-5 md:py-7 bg-slate-900 text-slate-500 rounded-xl md:rounded-[40px] font-black uppercase tracking-[4px] text-[9px] md:text-[10px]">Re-Analyze</button>
+                  <button onClick={handleConfirm} className="w-full md:flex-[2] py-5 md:py-7 bg-emerald-600 text-white rounded-xl md:rounded-[40px] font-black uppercase tracking-[5px] md:tracking-[6px] text-[10px] md:text-[11px] shadow-2xl">Confirm Vault Entry</button>
                </div>
             </div>
           )}
@@ -446,10 +436,6 @@ const AllInOneProductTool: React.FC<{
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
-  const [newCat, setNewCat] = useState('');
-  const [newBrand, setNewBrand] = useState('');
-  const [showAddCat, setShowAddCat] = useState(false);
-  const [showAddBrand, setShowAddBrand] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -492,7 +478,6 @@ const AllInOneProductTool: React.FC<{
             const scannedData = await aiInventoryWizard({ image: { data: base64Data, mimeType } });
             if (scannedData) {
               const normalizedType = scannedData.type ? (scannedData.type.charAt(0).toUpperCase() + scannedData.type.slice(1).toLowerCase()) : data.type;
-              
               setData(prev => ({
                 ...prev,
                 name: scannedData.name || prev.name,
@@ -506,7 +491,6 @@ const AllInOneProductTool: React.FC<{
               setTimeout(() => setScanFeedback(null), 3000);
             }
           } catch (error) {
-            console.error("Lens Scan failed:", error);
             setScanFeedback("IDENTIFICATION FAILED");
             setTimeout(() => setScanFeedback(null), 3000);
           } finally {
@@ -533,72 +517,55 @@ const AllInOneProductTool: React.FC<{
     reader.readAsDataURL(file);
   };
 
-  const handleAiDescription = async () => {
-    if (!data.name || !data.brand) return alert("Flavor and Brand must be set for AI generation.");
-    setIsAiGenerating(true);
-    const result = await generateProductDescription(data.name, data.brand, data.category, data.type, data.thc);
-    if (result) {
-      setData(prev => ({
-        ...prev,
-        description: result.fullDescription || prev.description,
-        shortDescription: result.shortDescription || prev.shortDescription,
-        tags: result.tags || prev.tags
-      }));
-    }
-    setIsAiGenerating(false);
-  };
-
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-3xl animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6 backdrop-blur-3xl animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-[#05070a]/95" onClick={onClose}></div>
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-lg bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[92vh] shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-lg md:max-w-2xl bg-[#0a0d14] rounded-3xl md:rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[95vh] shadow-[0_0_100px_rgba(0,0,0,0.8)]">
         
-        {/* Header */}
-        <div className="p-12 pb-8 bg-[#0a0d14] relative z-10">
+        <div className="p-8 md:p-12 pb-4 md:pb-8 bg-[#0a0d14] relative z-10 border-b border-white/5">
            <div className="flex justify-between items-start">
-              <div className="space-y-4">
-                <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">GENETICS VAULT ENTRY<br/>TOOL</h2>
-                <div className="flex items-center gap-8">
-                  <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[3px] flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+              <div className="space-y-2 md:space-y-4">
+                <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter leading-tight">GENETICS VAULT ENTRY<br className="md:hidden"/>TOOL</h2>
+                <div className="flex items-center gap-4 md:gap-8">
+                  <p className="text-[8px] md:text-[10px] text-emerald-500 font-black uppercase tracking-[3px] flex items-center gap-2">
+                    <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-emerald-500"></div>
                     INTEGRATED SYSTEM
                   </p>
                   <div className="flex items-center gap-2">
                     <CloudCheck size={14} className="text-emerald-500" />
-                    <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">VAULT SYNCED</span>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">VAULT SYNCED</span>
                   </div>
                 </div>
               </div>
-              <button onClick={onClose} className="w-16 h-16 bg-slate-900/50 text-slate-400 rounded-full flex items-center justify-center hover:text-white transition-all border border-white/5 shadow-2xl"><X size={32}/></button>
+              <button onClick={onClose} className="w-10 h-10 md:w-16 md:h-16 bg-slate-900/50 text-slate-400 rounded-full flex items-center justify-center hover:text-white transition-all border border-white/5 shrink-0"><X size={24} className="md:size-[32px]"/></button>
            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-12 pt-0 space-y-12 custom-scrollbar no-scrollbar">
-          {/* Lens Visual */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 pt-6 md:pt-10 space-y-10 md:space-y-12 custom-scrollbar no-scrollbar">
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h4 className="text-[9px] md:text-[11px] font-black uppercase text-slate-500 tracking-[4px] md:tracking-[5px] flex items-center gap-3">
                 < LucideImage size={14}/> PRODUCT PHOTO
               </h4>
               <button 
                 onClick={() => scanInputRef.current?.click()}
-                className="bg-[#10b981]/10 border border-[#10b981]/50 px-6 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[3px] flex items-center gap-3 text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] group relative overflow-hidden"
+                className="bg-[#10b981]/10 border border-[#10b981]/50 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-[20px] text-[8px] md:text-[10px] font-black uppercase tracking-[3px] flex items-center gap-3 text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] group relative overflow-hidden w-full sm:w-auto justify-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 <Camera size={16} className="group-hover:scale-110 transition-transform"/> GENETICS LENS AI
               </button>
             </div>
             
-            <div className="aspect-square relative bg-slate-950 rounded-[64px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
+            <div className="aspect-square relative bg-slate-950 rounded-3xl md:rounded-[64px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
               {data.image ? (
-                <img src={data.image} className="w-full h-full object-contain p-10 transition-transform duration-1000 group-hover:scale-105" />
+                <img src={data.image} className="w-full h-full object-contain p-6 md:p-10 transition-transform duration-1000 group-hover:scale-105" />
               ) : (
                 <div className="flex flex-col items-center gap-4 text-slate-800">
                   <div className="relative">
-                    <Camera size={64}/>
+                    <Camera size={48} className="md:size-[64px]"/>
                     <div className="absolute -inset-4 border-2 border-emerald-500/20 rounded-full animate-ping"></div>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[4px]">Awaiting Genetics...</span>
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[4px]">Awaiting Genetics...</span>
                 </div>
               )}
 
@@ -606,55 +573,53 @@ const AllInOneProductTool: React.FC<{
                 <div className="absolute inset-0 z-20 pointer-events-none">
                   <div className="absolute left-0 right-0 h-[2px] bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,1)] animate-scan z-30"></div>
                   <div className="absolute inset-0 bg-emerald-900/10 backdrop-blur-[2px] animate-pulse"></div>
-                  <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping"></div>
-                  <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping delay-300"></div>
-                  <div className="absolute bottom-1/4 left-1/2 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping delay-700"></div>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                     <span className="text-[11px] font-black text-white uppercase tracking-[10px] mt-20 animate-bounce">ANALYZING DNA</span>
+                     <span className="text-[9px] md:text-[11px] font-black text-white uppercase tracking-[8px] md:tracking-[10px] mt-10 md:mt-20 animate-bounce">ANALYZING DNA</span>
                   </div>
                 </div>
               )}
 
-              {isProcessing && (
+              {(isProcessing || isScanning) && (
                 <div className="absolute inset-0 bg-[#0a0d14]/80 backdrop-blur-2xl flex flex-col items-center justify-center animate-in fade-in z-20">
-                  <div className="relative"><RefreshCw className="animate-spin text-emerald-500 mb-6" size={48}/><div className="absolute inset-0 blur-xl bg-emerald-500/20"></div></div>
-                  <span className="text-[10px] font-black text-white uppercase tracking-[5px]">POLISHING IMAGE...</span>
+                  {/* Fixed duplicate className attribute */}
+                  <div className="relative"><RefreshCw className="animate-spin text-emerald-500 mb-4 md:mb-6 md:w-12 md:h-12" size={32}/><div className="absolute inset-0 blur-xl bg-emerald-500/20"></div></div>
+                  <span className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-[4px] md:tracking-[5px]">PROCESSING...</span>
                 </div>
               )}
               
               {scanFeedback && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-8 py-4 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.4)] border border-white/10 animate-in zoom-in-95 z-40">
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3 whitespace-nowrap"><Check size={16}/> {scanFeedback}</span>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-6 md:px-8 py-3 md:py-4 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.4)] border border-white/10 animate-in zoom-in-95 z-40">
+                  <span className="text-[8px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2 md:gap-3 whitespace-nowrap"><Check size={16}/> {scanFeedback}</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
-                <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-8 py-4 rounded-full font-black uppercase text-[10px] tracking-[5px] shadow-2xl active:scale-95 transition-all">Manual Photo</button>
+                <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 md:px-8 py-3 md:py-4 rounded-full font-black uppercase text-[8px] md:text-[10px] tracking-[4px] md:tracking-[5px] shadow-2xl active:scale-95 transition-all">Manual Photo</button>
               </div>
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'image')} />
             <input ref={scanInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileCapture(e, 'scan')} />
           </div>
 
-          <div className="space-y-10">
-            <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-4"><LucideImage size={14}/> BRAND IDENTITY (LOGO)</h4>
-            <div className="h-48 relative bg-slate-950 rounded-[48px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
-              <img src={data.brandLogo} className="w-full h-full object-contain p-12 transition-transform duration-1000 group-hover:scale-110" />
+          <div className="space-y-8 md:space-y-10">
+            <h4 className="text-[9px] md:text-[11px] font-black uppercase text-slate-500 tracking-[4px] md:tracking-[5px] flex items-center gap-3"><LucideImage size={14}/> BRAND IDENTITY</h4>
+            <div className="h-32 md:h-48 relative bg-slate-950 rounded-2xl md:rounded-[48px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
+              <img src={data.brandLogo} className="w-full h-full object-contain p-8 md:p-12 transition-transform duration-1000 group-hover:scale-110" />
               <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <button onClick={() => brandLogoInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[10px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Upload Logo</button>
+                 <button onClick={() => brandLogoInputRef.current?.click()} className="bg-white text-black px-4 md:px-6 py-2 md:py-3 rounded-full font-black uppercase text-[8px] md:text-[10px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Upload Logo</button>
               </div>
               <input ref={brandLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'brandLogo')} />
             </div>
 
-            <div className="grid grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 gap-6 md:gap-8">
               <FormField label="FLAVOR / STRAIN NAME" icon={<Sparkles size={16}/>}>
-                <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-2xl py-8" placeholder="Ex. Purple Runtz..." />
+                <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-xl md:text-2xl py-6 md:py-8" placeholder="Ex. Purple Runtz..." />
               </FormField>
-              <div className="grid grid-cols-2 gap-8">
-                <FormField label="THC LEVEL (%)" icon={<TrendingUp size={16}/>}>
-                  <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium py-6" />
+              <div className="grid grid-cols-2 gap-4 md:gap-8">
+                <FormField label="THC (%)" icon={<TrendingUp size={16}/>}>
+                  <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium py-4 md:py-6" />
                 </FormField>
-                <FormField label="STRAIN TYPE" icon={<LayoutGrid size={16}/>}>
-                  <select value={data.type} onChange={e => setData({...data, type: e.target.value as StrainType})} className="form-input-premium py-6">
+                <FormField label="TYPE" icon={<LayoutGrid size={16}/>}>
+                  <select value={data.type} onChange={e => setData({...data, type: e.target.value as StrainType})} className="form-input-premium py-4 md:py-6">
                     {Object.values(StrainType).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </FormField>
@@ -669,16 +634,17 @@ const AllInOneProductTool: React.FC<{
           </div>
         </div>
 
-        <div className="p-12 pt-8 border-t border-white/5 bg-[#0a0d14] flex gap-8 shrink-0 z-10">
-          <button onClick={onDelete} className="w-24 h-24 rounded-[32px] bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-90 flex items-center justify-center"><Trash2 size={40}/></button>
-          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black rounded-[48px] uppercase tracking-[8px] text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none">
-            <div className="mb-1 text-xs">AUTHORIZE</div>
-            <div className="flex items-center gap-3"><span className="opacity-50 text-[10px]">&</span><span>SAVE PRODUCT</span></div>
+        <div className="p-8 md:p-12 pt-6 md:pt-8 border-t border-white/5 bg-[#0a0d14] flex gap-4 md:gap-8 shrink-0 z-10">
+          <button onClick={onDelete} className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[32px] bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-90 flex items-center justify-center shrink-0"><Trash2 size={24} className="md:size-[40px]"/></button>
+          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black rounded-2xl md:rounded-[48px] uppercase tracking-[4px] md:tracking-[8px] text-[11px] md:text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none px-4">
+            <div className="mb-0.5 md:mb-1 text-[8px] md:text-xs">AUTHORIZE</div>
+            <div className="flex items-center gap-1.5 md:gap-3"><span className="opacity-50 text-[7px] md:text-[10px]">&</span><span>SAVE PRODUCT</span></div>
           </button>
         </div>
       </div>
       <style>{`
-        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 32px; padding: 24px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; }
+        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; md:border-radius: 32px; padding: 16px; md:padding: 24px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 14px; md:font-size: 16px; }
+        @media (min-width: 768px) { .form-input-premium { border-radius: 32px; } }
         .form-input-premium:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
@@ -711,96 +677,36 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
     reader.readAsDataURL(file);
   };
 
-  const toggleProtocol = (id: string) => {
-    setSettings(prev => ({
-      ...prev,
-      customProtocols: prev.customProtocols.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p)
-    }));
-  };
-
-  const addProtocol = () => {
-    const newProtocol: CustomProtocol = {
-      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-      label: 'New Protocol',
-      description: 'Define operational logic...',
-      enabled: false
-    };
-    setSettings(prev => ({ ...prev, customProtocols: [...prev.customProtocols, newProtocol] }));
-  };
-
   return (
-    <div className="max-w-5xl space-y-16 animate-in fade-in duration-500 pb-96">
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><LucideImage className="text-emerald-500" size={32}/> Brand Identity</h3>
-        <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="w-48 h-48 bg-slate-950 rounded-[48px] border border-white/5 flex items-center justify-center overflow-hidden relative group">
-            <img src={settings.logoUrl} className="w-full h-full object-contain p-6" />
+    <div className="max-w-5xl space-y-10 md:space-y-16 animate-in fade-in duration-500 pb-96 mx-auto w-full">
+      <div className="bg-[#0a0d14] border border-slate-900 p-8 md:p-14 rounded-[32px] md:rounded-[64px] shadow-2xl space-y-8 md:space-y-12">
+        <h3 className="text-2xl md:text-3xl font-black text-white flex items-center gap-4 md:gap-6 uppercase tracking-tighter"><LucideImage className="text-emerald-500" size={32}/> Brand Identity</h3>
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+          <div className="w-32 h-32 md:w-48 md:h-48 bg-slate-950 rounded-[32px] md:rounded-[48px] border border-white/5 flex items-center justify-center overflow-hidden relative group shrink-0">
+            <img src={settings.logoUrl} className="w-full h-full object-contain p-4 md:p-6" />
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => storeLogoInputRef.current?.click()}><Upload className="text-white" size={32}/></div>
             <input ref={storeLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
           </div>
-          <div className="flex-1 space-y-4">
-             <h4 className="text-xl font-black text-white uppercase tracking-tight">Vault Master Logo</h4>
-             <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Upload branding.</p>
-             <button onClick={() => storeLogoInputRef.current?.click()} className="bg-emerald-600/10 text-emerald-500 px-8 py-3 rounded-2xl border border-emerald-500/20 font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Select Media</button>
+          <div className="flex-1 space-y-3 md:space-y-4 text-center md:text-left">
+             <h4 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">Vault Master Logo</h4>
+             <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed italic">Upload primary branding.</p>
+             <button onClick={() => storeLogoInputRef.current?.click()} className="bg-emerald-600/10 text-emerald-500 px-6 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl border border-emerald-500/20 font-black uppercase text-[9px] md:text-[10px] tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Select Media</button>
           </div>
         </div>
       </div>
       
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Globe className="text-emerald-500" size={32}/> Operations Master</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <ToggleRow active={settings.pickupOn} onToggle={() => setSettings(s => ({...s, pickupOn: !s.pickupOn}))} label="Pickup Portal" description="Enable client pickup transmissions." icon={<Package size={20}/>} />
-          <ToggleRow active={settings.deliveryOn} onToggle={() => setSettings(s => ({...s, deliveryOn: !s.deliveryOn}))} label="Delivery Protocol" description="Enable exotic delivery logistics." icon={<Truck size={20}/>} />
+      <div className="bg-[#0a0d14] border border-slate-900 p-8 md:p-14 rounded-[32px] md:rounded-[64px] shadow-2xl space-y-8 md:space-y-12">
+        <h3 className="text-2xl md:text-3xl font-black text-white flex items-center gap-4 md:gap-6 uppercase tracking-tighter"><Globe className="text-emerald-500" size={32}/> Operations Master</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          <ToggleRow active={settings.pickupOn} onToggle={() => setSettings(s => ({...s, pickupOn: !s.pickupOn}))} label="Pickup Portal" description="Client pickup transmissions." icon={<Package size={20}/>} />
+          <ToggleRow active={settings.deliveryOn} onToggle={() => setSettings(s => ({...s, deliveryOn: !s.deliveryOn}))} label="Delivery Protocol" description="Exotic delivery logistics." icon={<Truck size={20}/>} />
           <ToggleRow active={settings.locationRequirementOn} onToggle={() => setSettings(s => ({...s, locationRequirementOn: !s.locationRequirementOn}))} label="Proximity Check" description="GPS verification required." icon={<MapPin size={20}/>} />
           <ToggleRow active={settings.alarmSoundOn} onToggle={() => setSettings(s => ({...s, alarmSoundOn: !s.alarmSoundOn}))} label="Audible Alerts" description="Sonic notifications active." icon={<Volume2 size={20}/>} />
         </div>
       </div>
 
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <div className="flex items-center justify-between">
-           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><MessagesSquare className="text-emerald-500" size={32}/> Messaging Engine</h3>
-           <ToggleRow active={settings.messaging.postPickupEnabled} onToggle={() => updateMessaging({ postPickupEnabled: !settings.messaging.postPickupEnabled })} label="" description="" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-           <FormField label="Preferred Channel" icon={<Activity size={16}/>}>
-              <select value={settings.messaging.channel} onChange={e => updateMessaging({ channel: e.target.value as any })} className="form-input-premium-settings">
-                 <option value="sms">SMS Protocol</option>
-                 <option value="email">Email Protocol</option>
-                 <option value="both">Hybrid Sync (Both)</option>
-              </select>
-           </FormField>
-           <FormField label="Message Style" icon={<Zap size={16}/>}>
-              <select value={settings.messaging.style} onChange={e => updateMessaging({ style: e.target.value as any })} className="form-input-premium-settings">
-                 <option value="friendly">Friendly Budtender</option>
-                 <option value="premium">Executive Exotic</option>
-              </select>
-           </FormField>
-        </div>
-        <div className="space-y-8">
-           <FormField label="SMS Template" icon={<Smartphone size={16}/>}>
-              <textarea value={settings.messaging.smsTemplate} onChange={e => updateMessaging({ smsTemplate: e.target.value })} className="w-full bg-slate-950 border border-white/5 p-8 rounded-[32px] text-slate-400 font-medium text-sm min-h-[100px] outline-none focus:border-emerald-500 transition-all leading-relaxed" />
-           </FormField>
-           <FormField label="Email Template" icon={<Mail size={16}/>}>
-              <textarea value={settings.messaging.emailTemplate} onChange={e => updateMessaging({ emailTemplate: e.target.value })} className="w-full bg-slate-950 border border-white/5 p-8 rounded-[32px] text-slate-400 font-medium text-sm min-h-[100px] outline-none focus:border-emerald-500 transition-all leading-relaxed" />
-           </FormField>
-        </div>
-      </div>
-      
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Github className="text-slate-400" size={32}/> Cloud Sync</h3>
-        {!settings.github.connected ? (
-          <button onClick={handleGitHubLink} disabled={isLinking} className="w-full bg-white text-black py-8 rounded-[40px] font-black uppercase tracking-[8px] text-[13px] flex items-center justify-center gap-4 hover:bg-slate-100 transition-all active:scale-95">
-            {isLinking ? <RefreshCw className="animate-spin" size={20}/> : <Link2 size={20}/>}
-            {isLinking ? 'SYNCING...' : 'CONNECT GITHUB VAULT'}
-          </button>
-        ) : (
-          <div className="flex items-center gap-4 text-emerald-500 font-black uppercase tracking-widest text-xs"><CloudCheck size={20}/> VAULT CONNECTED TO {settings.github.repoName}</div>
-        )}
-      </div>
-
       <style>{`
-        .form-input-premium-settings { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 18px 24px; font-weight: 800; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 14px; }
-        .form-input-premium-settings:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
+        .form-input-premium-settings { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; md:border-radius: 24px; padding: 14px md:padding: 18px 24px; font-weight: 800; color: white; outline: none; transition: all 0.3s; appearance: none; font-size: 13px md:font-size: 14px; }
       `}</style>
     </div>
   );
@@ -833,26 +739,26 @@ const AdminApp: React.FC<AdminAppProps> = ({
 
   return (
     <div className="flex h-screen w-full bg-[#05070a] text-slate-100 overflow-hidden font-sans relative">
-      <aside className="w-24 bg-[#0a0d14] border-r border-slate-900 flex flex-col items-center py-10 z-[100] shadow-2xl">
-        <div className="mb-12">
-          {settings.logoUrl ? <img src={settings.logoUrl} className="w-12 h-12 rounded-2xl object-cover shadow-2xl" /> : <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">R</div>}
+      <aside className="w-16 md:w-24 bg-[#0a0d14] border-r border-slate-900 flex flex-col items-center py-6 md:py-10 z-[100] shadow-2xl shrink-0">
+        <div className="mb-8 md:mb-12 shrink-0">
+          {settings.logoUrl ? <img src={settings.logoUrl} className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl object-cover shadow-2xl" /> : <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">R</div>}
         </div>
-        <nav className="flex-1 flex flex-col gap-10 items-center">
+        <nav className="flex-1 flex flex-col gap-6 md:gap-10 items-center overflow-y-auto no-scrollbar py-2">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
           <SidebarIconButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ClipboardList size={24}/>} title="Queue" />
           <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={24}/>} title="SKUs" />
           <SidebarIconButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={24}/>} title="Tools" />
         </nav>
-        <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group"><LogOut size={26}/><span className="text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span></button>
+        <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group shrink-0"><LogOut size={26}/><span className="hidden md:block text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span></button>
       </aside>
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
-        <header className="h-28 flex items-center justify-between px-14 border-b border-slate-900/50 bg-[#05070a] z-[90]">
-          <h2 className="text-4xl font-black uppercase tracking-[4px] text-white leading-none">{activeTab.toUpperCase()}</h2>
-          <button onClick={onExit} className="bg-slate-900 px-8 py-4 rounded-[20px] border border-slate-800 text-[10px] font-black uppercase tracking-[3px] hover:border-rose-500/50 hover:text-rose-500 transition-all">Vault Lock</button>
+        <header className="h-20 md:h-28 flex items-center justify-between px-6 md:px-14 border-b border-slate-900/50 bg-[#05070a] z-[90] shrink-0">
+          <h2 className="text-2xl md:text-4xl font-black uppercase tracking-[2px] md:tracking-[4px] text-white leading-none truncate">{activeTab.toUpperCase()}</h2>
+          <button onClick={onExit} className="bg-slate-900 px-4 md:px-8 py-2.5 md:py-4 rounded-xl md:rounded-[20px] border border-slate-800 text-[8px] md:text-[10px] font-black uppercase tracking-[2px] md:tracking-[3px] hover:border-rose-500/50 hover:text-rose-500 transition-all">Vault Lock</button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar min-h-0">
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar min-h-0">
           {activeTab === 'dashboard' && <Dashboard stats={stats} />}
           {activeTab === 'orders' && <OrderManager orders={orders} updateOrderStatus={updateOrderStatus} />}
           {activeTab === 'inventory' && <ProductManager products={products} onEdit={setEditingProduct} onAdd={handleAddNewProduct} onAiAdd={() => setIsAiWizardOpen(true)} />}
