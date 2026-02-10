@@ -16,30 +16,22 @@ import {
   LogOut,
   Zap,
   MapPin,
-  Timer,
   ImageIcon,
   Boxes,
   MessageSquare,
   Globe,
-  Bell,
   Volume2,
   Coins,
   Wand2,
   ChevronRight,
-  ChevronDown,
   Sparkles,
   Lock,
   CloudCheck,
   Truck,
-  Mail,
-  Smartphone,
-  Gift,
-  Search,
   Bot,
   Layers,
   Check,
   Star,
-  Activity,
   PlusCircle,
   Github,
   CloudUpload,
@@ -47,8 +39,7 @@ import {
   Image as LucideImage,
   Upload
 } from 'lucide-react';
-import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessageLog, MessagingSettings, LoyaltySettings, GitHubSettings } from '../types';
-import { getCategoryIcon } from '../constants';
+import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings } from '../types';
 import { generateProductDescription, removeImageBackground } from '../services/geminiService';
 
 interface AdminAppProps {
@@ -64,8 +55,6 @@ interface AdminAppProps {
   setBrands: React.Dispatch<React.SetStateAction<string[]>>;
   onExit: () => void;
 }
-
-// --- HELPER COMPONENTS ---
 
 function SidebarIconButton({ active, onClick, icon, title }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string }) {
   return (
@@ -119,76 +108,115 @@ function ToggleRow({ active, onToggle, label, description, icon }: { active: boo
   );
 }
 
-const Dashboard: React.FC<{ stats: any }> = ({ stats }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <StatCard title="Total Transmission Value" value={`$${stats.todayRevenue.toLocaleString()}`} icon={<TrendingUp size={24} />} color="emerald" />
-    <StatCard title="Active Queue" value={stats.pendingOrders} icon={<Clock size={24} />} color="blue" alert={stats.pendingOrders > 0} />
-    <StatCard title="Genetics Shortage" value={stats.lowStock} icon={<AlertTriangle size={24} />} color="orange" alert={stats.lowStock > 0} />
-    <StatCard title="Total Vault SKUs" value={stats.activeProducts} icon={<Boxes size={24} />} color="purple" />
-  </div>
-);
-
-const OrderManager: React.FC<{ orders: Order[]; updateOrderStatus: (id: string, status: OrderStatus) => void }> = ({ orders, updateOrderStatus }) => (
-  <div className="bg-[#0a0d14] border border-slate-900 rounded-[56px] overflow-hidden shadow-2xl animate-in fade-in duration-500">
-    <table className="w-full text-left">
-      <thead className="text-[10px] text-slate-600 font-black uppercase tracking-[4px] border-b border-slate-900/50 bg-slate-950/30">
-        <tr><th className="p-10">Vault ID</th><th className="p-10">Client Identity</th><th className="p-10 text-center">Protocol Status</th><th className="p-10 text-right">Value</th></tr>
-      </thead>
-      <tbody className="divide-y divide-slate-900/30">
-        {orders.map(o => (
-          <tr key={o.id} className="hover:bg-white/[0.01] transition-all group">
-            <td className="p-10 font-black text-white uppercase text-xs tracking-widest">#{o.id}</td>
-            <td className="p-10 font-bold text-white text-lg">{o.customerName}</td>
-            <td className="p-10 text-center">
-              <select 
-                value={o.status} 
-                onChange={(e) => updateOrderStatus(o.id, e.target.value as OrderStatus)}
-                className="bg-slate-950 text-[10px] font-black uppercase tracking-widest border border-slate-800 rounded-xl p-3 text-emerald-500 focus:border-emerald-500 outline-none"
-              >
-                {Object.values(OrderStatus).map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </td>
-            <td className="p-10 text-right font-black text-emerald-400 text-2xl tracking-tighter">${o.total.toFixed(2)}</td>
-          </tr>
-        ))}
-        {orders.length === 0 && <tr><td colSpan={4} className="p-40 text-center opacity-10 text-slate-500 font-black uppercase tracking-[10px]">Queue Clear</td></tr>}
-      </tbody>
-    </table>
-  </div>
-);
-
-const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => void; onAdd: () => void }> = ({ products, onEdit, onAdd }) => (
-  <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-500 pb-40">
-    <div className="flex justify-between items-center bg-[#0a0d14] p-12 rounded-[56px] border border-slate-900 shadow-2xl">
-       <div className="space-y-3">
-          <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Genetics Vault</h3>
-          <p className="text-[10px] text-slate-600 font-black uppercase tracking-[4px]">{products.length} AUTHORIZED SKUs</p>
-       </div>
-       <button onClick={onAdd} className="bg-emerald-600 text-white px-14 py-7 rounded-[32px] font-black uppercase tracking-[6px] text-[11px] hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 active:scale-95">+ NEW EXOTIC DROP</button>
+const Dashboard: React.FC<{ stats: any }> = ({ stats }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 animate-in fade-in duration-500">
+      <StatCard title="Total Revenue" value={`$${stats.todayRevenue.toFixed(2)}`} icon={<TrendingUp size={24}/>} color="emerald" />
+      <StatCard title="Active Orders" value={stats.pendingOrders} icon={<ClipboardList size={24}/>} color="blue" alert={stats.pendingOrders > 0} />
+      <StatCard title="Low Inventory" value={stats.lowStock} icon={<AlertTriangle size={24}/>} color="orange" alert={stats.lowStock > 0} />
+      <StatCard title="Active SKUs" value={stats.activeProducts} icon={<Boxes size={24}/>} color="purple" />
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-      {products.map(p => (
-        <div key={p.id} onClick={() => onEdit(p)} className="bg-[#0a0d14] border border-slate-900 rounded-[48px] overflow-hidden group shadow-2xl transition-all hover:scale-[1.03] cursor-pointer">
-           <div className="aspect-[4/5] relative overflow-hidden bg-slate-950">
-              <img src={p.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <div className="bg-white text-black p-5 rounded-3xl shadow-2xl scale-50 group-hover:scale-100 transition-transform"><SettingsIcon size={28}/></div>
-              </div>
-           </div>
-           <div className="p-8 space-y-2">
-              <h4 className="text-xl font-black text-white tracking-tighter truncate">{p.name}</h4>
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{p.category}</p>
-                <span className="text-emerald-500 font-black text-xs">${Math.min(...p.weights.map(w => w.price))}</span>
-              </div>
-           </div>
+  );
+};
+
+const OrderManager: React.FC<{ orders: Order[]; updateOrderStatus: (id: string, status: OrderStatus) => void }> = ({ orders, updateOrderStatus }) => {
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+      {orders.length === 0 ? (
+        <div className="py-40 text-center opacity-20 flex flex-col items-center">
+          <ClipboardList size={80} className="mb-6" />
+          <p className="font-black uppercase tracking-[8px]">Queue Empty</p>
         </div>
-      ))}
-    </div>
-  </div>
-);
+      ) : (
+        orders.map(order => (
+          <div key={order.id} className="bg-[#0a0d14] border border-slate-900 rounded-[48px] p-10 flex flex-col md:flex-row items-center justify-between gap-10 hover:border-emerald-500/30 transition-all">
+            <div className="flex items-center gap-8">
+               <div className="w-20 h-20 rounded-[32px] bg-slate-950 flex flex-col items-center justify-center border border-white/5">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">ID</span>
+                  <span className="text-white font-black text-sm uppercase">#{order.id.slice(0, 4)}</span>
+               </div>
+               <div>
+                  <h4 className="text-2xl font-black text-white tracking-tighter">{order.customerName}</h4>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Clock size={12}/> {order.pickupTime}</span>
+                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{order.orderType}</span>
+                  </div>
+               </div>
+            </div>
 
-const PerfectFlowProductModal: React.FC<{ 
+            <div className="flex items-center gap-8">
+               <div className="text-right">
+                  <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Value</span>
+                  <span className="text-3xl font-black text-white">${order.total.toFixed(2)}</span>
+               </div>
+               <div className="flex gap-3">
+                  {Object.values(OrderStatus).map(status => (
+                    <button 
+                      key={status} 
+                      onClick={() => updateOrderStatus(order.id, status)}
+                      className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${order.status === status ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 text-slate-600 hover:text-white'}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+               </div>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
+const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => void; onAdd: () => void }> = ({ products, onEdit, onAdd }) => {
+  return (
+    <div className="space-y-10 animate-in fade-in duration-500 pb-20">
+      <div className="flex justify-between items-center">
+        <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[6px]">Active Vault Inventory ({products.length})</h3>
+        <button onClick={onAdd} className="bg-emerald-600 text-white px-10 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 shadow-2xl active:scale-95 transition-all">
+          <Plus size={18} /> New Product SKU
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {products.map(product => {
+          const totalStock = product.weights.reduce((sum, w) => sum + w.stock, 0);
+          return (
+            <div key={product.id} onClick={() => onEdit(product)} className="bg-[#0a0d14] border border-slate-900 rounded-[56px] overflow-hidden group cursor-pointer hover:border-emerald-500/30 transition-all shadow-2xl relative">
+              <div className="aspect-[4/3] relative bg-slate-950 overflow-hidden">
+                <img src={product.image} className="w-full h-full object-contain p-8 group-hover:scale-110 duration-1000" />
+                <div className="absolute top-6 left-6 flex gap-2">
+                  <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-black flex items-center gap-2 border border-white/5 shadow-2xl"><img src={product.brandLogo} className="w-4 h-4 rounded-full" /> {product.brand}</div>
+                  <div className={`px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl ${product.isPublished ? 'bg-emerald-600' : 'bg-rose-600'}`}>{product.isPublished ? 'LIVE' : 'HIDDEN'}</div>
+                </div>
+              </div>
+              <div className="p-10">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="text-xl font-black text-white leading-tight tracking-tight">{product.name}</h4>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{product.category} • {product.type}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-emerald-500 font-black text-xl">${Math.min(...product.weights.map(w => w.price))}</span>
+                  </div>
+                </div>
+                <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${totalStock < 10 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-emerald-500'}`}></div>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{totalStock} UNITS IN VAULT</span>
+                   </div>
+                   <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{product.thc}% THC</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const AllInOneProductTool: React.FC<{ 
   product: Product; 
   categories: string[]; 
   setCategories: React.Dispatch<React.SetStateAction<string[]>>;
@@ -201,7 +229,6 @@ const PerfectFlowProductModal: React.FC<{
   const [data, setData] = useState<Product>(product);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
   const [newCat, setNewCat] = useState('');
   const [newBrand, setNewBrand] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
@@ -211,7 +238,6 @@ const PerfectFlowProductModal: React.FC<{
 
   useEffect(() => {
     onSave(data);
-    setLastSync(new Date());
   }, [data, onSave]);
 
   const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'brandLogo') => {
@@ -261,20 +287,16 @@ const PerfectFlowProductModal: React.FC<{
 
   const addCategory = () => {
     if (!newCat.trim()) return;
-    if (!categories.includes(newCat)) {
-      setCategories(prev => [...prev, newCat]);
-      setData(prev => ({ ...prev, category: newCat }));
-    }
+    if (!categories.includes(newCat)) setCategories(prev => [...prev, newCat]);
+    setData(prev => ({ ...prev, category: newCat }));
     setNewCat('');
     setShowAddCat(false);
   };
 
   const addBrand = () => {
     if (!newBrand.trim()) return;
-    if (!brands.includes(newBrand)) {
-      setBrands(prev => [...prev, newBrand]);
-      setData(prev => ({ ...prev, brand: newBrand }));
-    }
+    if (!brands.includes(newBrand)) setBrands(prev => [...prev, newBrand]);
+    setData(prev => ({ ...prev, brand: newBrand }));
     setNewBrand('');
     setShowAddBrand(false);
   };
@@ -282,191 +304,160 @@ const PerfectFlowProductModal: React.FC<{
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 sm:p-12 backdrop-blur-3xl animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-slate-950/98" onClick={onClose}></div>
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-4xl bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[96vh] shadow-[0_0_150px_rgba(0,0,0,0.8)]">
-        
+      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col max-h-[96vh] shadow-[0_0_150px_rgba(0,0,0,0.8)]">
         <div className="p-10 border-b border-white/5 bg-[#0a0d14] flex justify-between items-center shrink-0 z-10">
            <div className="space-y-1">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Genetics Entry</h2>
-              <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">Vault Live • Autosaving</p>
-              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Genetics Vault Entry Tool</h2>
+              <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                Integrated All-In-One System
+              </p>
            </div>
            <button onClick={onClose} className="p-4 bg-slate-900/80 text-slate-500 rounded-full hover:text-rose-500 transition-all border border-white/5"><X size={28}/></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-12 sm:p-20 space-y-16 custom-scrollbar">
-          
-          <div className="space-y-6">
-            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><ImageIcon size={14}/> 1. Visual Capture</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex-1 overflow-y-auto p-12 sm:p-16 space-y-12 custom-scrollbar">
+          {/* 1. Visual Capture & AI Tools */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><ImageIcon size={14}/> Product Photo (AI BG Strip)</h4>
               <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
                 <img src={data.image} className="w-full h-full object-contain p-6 transition-transform duration-1000 group-hover:scale-110" />
                 {isProcessing && (
                   <div className="absolute inset-0 bg-emerald-600/90 backdrop-blur-3xl flex flex-col items-center justify-center animate-in fade-in">
-                    <RefreshCw className="animate-spin text-white mb-6" size={40}/>
+                    <RefreshCw className="animate-spin text-white mb-4" size={40}/>
+                    <span className="text-[8px] font-black text-white uppercase tracking-widest">AI Scrubbing...</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Product Photo</button>
+                   <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Select Image</button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'image')} />
               </div>
+            </div>
 
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><LucideImage size={14}/> Brand Identity (Logo)</h4>
               <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
-                  <LucideImage size={40}/>
-                  <span className="text-[8px] font-black uppercase tracking-widest mt-2">Brand Logo</span>
-                </div>
-                <img src={data.brandLogo} className="w-full h-full object-contain p-12 relative z-10 transition-transform duration-1000 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
+                <img src={data.brandLogo} className="w-full h-full object-contain p-12 transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                    <button onClick={() => brandLogoInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Upload Logo</button>
                 </div>
                 <input ref={brandLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'brandLogo')} />
               </div>
             </div>
-            {!data.image.includes('picsum') && !isProcessing && (
-              <p className="text-center text-[9px] font-black uppercase text-emerald-500 tracking-widest">AI Background Stripped & Sanitized</p>
-            )}
           </div>
 
-          <FormField label="2. Product Category" icon={<Boxes size={16}/>}>
-            <div className="flex gap-4">
-              <select value={data.category} onChange={e => setData({...data, category: e.target.value})} className="form-input-premium flex-1">
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <button onClick={() => setShowAddCat(!showAddCat)} className="bg-slate-900 p-6 rounded-[32px] border border-white/10 text-emerald-500 hover:bg-emerald-600 hover:text-white transition-all">
-                <Plus size={24}/>
-              </button>
-            </div>
-            {showAddCat && (
-              <div className="mt-4 flex gap-4 animate-in slide-in-from-top-2">
-                <input value={newCat} onChange={e => setNewCat(e.target.value)} className="form-input-premium flex-1" placeholder="Type new category..." onKeyDown={e => e.key === 'Enter' && addCategory()} />
-                <button onClick={addCategory} className="bg-emerald-600 px-8 rounded-[32px] font-black uppercase text-[10px] tracking-widest text-white">Save</button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* Category */}
+            <FormField label="Vault Section (Category)" icon={<Boxes size={16}/>}>
+              <div className="flex gap-4">
+                <select value={data.category} onChange={e => setData({...data, category: e.target.value})} className="form-input-premium flex-1">
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button onClick={() => setShowAddCat(!showAddCat)} className="bg-slate-900 p-6 rounded-[28px] border border-white/10 text-emerald-500 hover:bg-emerald-600 hover:text-white transition-all">
+                  <Plus size={24}/>
+                </button>
               </div>
-            )}
-          </FormField>
+              {showAddCat && (
+                <div className="mt-4 flex gap-3 animate-in slide-in-from-top-2">
+                  <input value={newCat} onChange={e => setNewCat(e.target.value)} className="form-input-premium flex-1" placeholder="New Category Name..." />
+                  <button onClick={addCategory} className="bg-emerald-600 px-8 rounded-[28px] font-black uppercase text-[10px] tracking-widest text-white">Save</button>
+                </div>
+              )}
+            </FormField>
 
-          <FormField label="3. Genetics Brand" icon={<Zap size={16}/>}>
-            <div className="flex gap-4">
-              <select value={data.brand} onChange={e => setData({...data, brand: e.target.value})} className="form-input-premium flex-1">
-                {brands.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-              <button onClick={() => setShowAddBrand(!showAddBrand)} className="bg-slate-900 p-6 rounded-[32px] border border-white/10 text-emerald-500 hover:bg-emerald-600 hover:text-white transition-all">
-                <Plus size={24}/>
-              </button>
-            </div>
-            {showAddBrand && (
-              <div className="mt-4 flex gap-4 animate-in slide-in-from-top-2">
-                <input value={newBrand} onChange={e => setNewBrand(e.target.value)} className="form-input-premium flex-1" placeholder="Type new brand..." onKeyDown={e => e.key === 'Enter' && addBrand()} />
-                <button onClick={addBrand} className="bg-emerald-600 px-8 rounded-[32px] font-black uppercase text-[10px] tracking-widest text-white">Save</button>
+            {/* Brand */}
+            <FormField label="Genetics Provider (Brand)" icon={<Zap size={16}/>}>
+              <div className="flex gap-4">
+                <select value={data.brand} onChange={e => setData({...data, brand: e.target.value})} className="form-input-premium flex-1">
+                  {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+                <button onClick={() => setShowAddBrand(!showAddBrand)} className="bg-slate-900 p-6 rounded-[28px] border border-white/10 text-emerald-500 hover:bg-emerald-600 hover:text-white transition-all">
+                  <Plus size={24}/>
+                </button>
               </div>
-            )}
-          </FormField>
+              {showAddBrand && (
+                <div className="mt-4 flex gap-3 animate-in slide-in-from-top-2">
+                  <input value={newBrand} onChange={e => setNewBrand(e.target.value)} className="form-input-premium flex-1" placeholder="New Brand Name..." />
+                  <button onClick={addBrand} className="bg-emerald-600 px-8 rounded-[28px] font-black uppercase text-[10px] tracking-widest text-white">Save</button>
+                </div>
+              )}
+            </FormField>
+          </div>
 
-          <FormField label="4. Flavor / Strain Name" icon={<Sparkles size={16}/>}>
-            <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-3xl" placeholder="Ex. Purple Runtz..." />
-          </FormField>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <FormField label="Flavor / Strain Name" icon={<Sparkles size={16}/>}>
+              <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-2xl" placeholder="Ex. Purple Runtz..." />
+            </FormField>
+            <div className="grid grid-cols-2 gap-10">
+              <FormField label="THC Level (%)" icon={<TrendingUp size={16}/>}>
+                <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium" />
+              </FormField>
+              <FormField label="Strain Type" icon={<LayoutGrid size={16}/>}>
+                <select value={data.type} onChange={e => setData({...data, type: e.target.value as StrainType})} className="form-input-premium">
+                  {Object.values(StrainType).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </FormField>
+            </div>
+          </div>
 
-          <FormField label="5. THC Concentration (%)" icon={<TrendingUp size={16}/>}>
-            <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium text-2xl" placeholder="0.0" />
-          </FormField>
-
-          <div className="space-y-8">
-            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><Package size={14}/> 6 & 7. Logistics (Quantity & Price)</h4>
-            <div className="bg-slate-950 p-10 rounded-[48px] border border-white/5 space-y-8">
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><Package size={14}/> Variations & Stock Control</h4>
+            <div className="space-y-4">
               {data.weights.map((w, idx) => (
-                <div key={idx} className="grid grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest ml-4">Format (e.g. 3.5g)</span>
-                    <input value={w.weight} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, weight: e.target.value} : wt)})} className="form-input-premium text-center" />
+                <div key={idx} className="grid grid-cols-3 gap-4 bg-slate-950 p-6 rounded-[32px] border border-white/5">
+                  <div className="space-y-1">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-4">Weight Format</span>
+                    <input value={w.weight} placeholder="e.g. 3.5g" onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, weight: e.target.value} : wt)})} className="bg-transparent border-none outline-none font-black text-white px-4 w-full" />
                   </div>
-                  <div className="space-y-2">
-                    <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest ml-4">Stock Quantity</span>
-                    <input type="number" value={w.stock} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, stock: parseInt(e.target.value) || 0} : wt)})} className="form-input-premium text-center" />
+                  <div className="space-y-1">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-4">Current Stock</span>
+                    <input type="number" placeholder="Units" value={w.stock} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, stock: parseInt(e.target.value) || 0} : wt)})} className="bg-transparent border-none outline-none font-black text-white px-4 w-full" />
                   </div>
-                  <div className="space-y-2">
-                    <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest ml-4">Price ($)</span>
-                    <input type="number" step="0.01" value={w.price} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, price: parseFloat(e.target.value) || 0} : wt)})} className="form-input-premium text-center text-emerald-500" />
+                  <div className="space-y-1">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest ml-4">Price ($)</span>
+                    <input type="number" step="0.01" placeholder="Valuation" value={w.price} onChange={e => setData({...data, weights: data.weights.map((wt, i) => i === idx ? {...wt, price: parseFloat(e.target.value) || 0} : wt)})} className="bg-transparent border-none outline-none font-black text-emerald-500 px-4 w-full" />
                   </div>
                 </div>
               ))}
-              <button onClick={() => setData({...data, weights: [...data.weights, { weight: '', price: 0, stock: 0 }]})} className="w-full py-4 border-2 border-dashed border-white/5 rounded-[24px] text-[9px] font-black uppercase tracking-[4px] text-slate-700 hover:text-emerald-500 hover:border-emerald-500 transition-all">+ Add Weight Format</button>
+              <button onClick={() => setData({...data, weights: [...data.weights, { weight: '', price: 0, stock: 0 }]})} className="w-full py-4 border-2 border-dashed border-white/5 rounded-[28px] text-[9px] font-black uppercase tracking-[4px] text-slate-700 hover:text-emerald-500 hover:border-emerald-500 transition-all">+ Add Weight Profile</button>
             </div>
           </div>
-
-          <FormField label="8. Strain Classification" icon={<LayoutGrid size={16}/>}>
-            <div className="grid grid-cols-3 gap-4">
-              {Object.values(StrainType).map(t => (
-                <button key={t} onClick={() => setData({...data, type: t as StrainType})} className={`py-6 rounded-[32px] font-black uppercase text-[10px] tracking-[4px] border transition-all ${data.type === t ? 'bg-emerald-600 border-emerald-400 text-white shadow-xl' : 'bg-slate-900 border-white/5 text-slate-600 hover:border-emerald-500'}`}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </FormField>
 
           <div className="space-y-6">
             <div className="flex justify-between items-center ml-4">
-               <label className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-2"><MessageSquare size={14}/> 9. AI Genetics Profile</label>
+               <label className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-2"><MessageSquare size={14}/> AI Genetics Description</label>
                <button onClick={handleAiDescription} disabled={isAiGenerating} className="bg-emerald-600/10 text-emerald-500 px-6 py-3 rounded-2xl border border-emerald-500/20 text-[9px] font-black uppercase tracking-[3px] flex items-center gap-3 hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50">
-                {isAiGenerating ? <RefreshCw className="animate-spin" size={14}/> : <Wand2 size={14}/>} {isAiGenerating ? 'Analyzing...' : 'Generate Neural Profile'}
+                {isAiGenerating ? <RefreshCw className="animate-spin" size={14}/> : <Wand2 size={14}/>} {isAiGenerating ? 'AI Synthesizing...' : 'Regenerate Narrative'}
                </button>
             </div>
-            <textarea value={data.description} onChange={e => setData({...data, description: e.target.value})} className="w-full bg-slate-950 border border-white/5 p-10 rounded-[48px] text-slate-400 font-medium text-lg min-h-[300px] outline-none focus:border-emerald-500 transition-all leading-relaxed custom-scrollbar" placeholder="Detailed strain experience profile..." />
+            <textarea value={data.description} onChange={e => setData({...data, description: e.target.value})} className="w-full bg-slate-950 border border-white/5 p-10 rounded-[48px] text-slate-400 font-medium text-lg min-h-[160px] outline-none focus:border-emerald-500 transition-all leading-relaxed custom-scrollbar" />
           </div>
-
-          <div className="h-20 shrink-0"></div>
         </div>
 
-        <div className="p-12 border-t border-slate-900/50 bg-[#0a0d14] flex gap-8 shrink-0 z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
-          {onDelete && <button onClick={onDelete} className="p-8 rounded-[32px] bg-rose-950/20 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-95"><Trash2 size={32}/></button>}
-          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black py-8 rounded-[40px] uppercase tracking-[10px] text-[14px] shadow-2xl hover:bg-emerald-500 active:scale-[0.98] transition-all flex items-center justify-center gap-4">
-             FINALIZE & PUBLISH SKU
-          </button>
+        <div className="p-12 border-t border-white/5 bg-[#0a0d14] flex gap-6 shrink-0 z-10">
+          {onDelete && <button onClick={onDelete} className="p-8 rounded-[40px] bg-rose-950/20 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-95"><Trash2 size={32}/></button>}
+          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black py-8 rounded-[48px] uppercase tracking-[10px] text-[14px] shadow-2xl hover:bg-emerald-500 transition-all active:scale-[0.98]">AUTHORIZE & SAVE PRODUCT</button>
         </div>
       </div>
       <style>{`
-        .form-input-premium {
-          width: 100%;
-          background: #05070a;
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 32px;
-          padding: 24px 32px;
-          font-weight: 900;
-          color: white;
-          outline: none;
-          transition: all 0.3s;
-          appearance: none;
-        }
-        .form-input-premium:focus {
-          border-color: #10b981;
-          background: #000;
-          box-shadow: 0 0 30px rgba(16,185,129,0.1);
-        }
+        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 28px; padding: 20px 28px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; }
+        .form-input-premium:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
       `}</style>
     </div>
   );
 };
 
 const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<React.SetStateAction<StoreSettings>> }> = ({ settings, setSettings }) => {
-  const updateMessaging = (updates: Partial<MessagingSettings>) => {
-    setSettings(prev => ({ ...prev, messaging: { ...prev.messaging, ...updates } }));
-  };
-
-  const updateLoyalty = (updates: Partial<LoyaltySettings>) => {
-    setSettings(prev => ({ ...prev, loyalty: { ...prev.loyalty, ...updates } }));
-  };
-
-  const updateGitHub = (updates: Partial<GitHubSettings>) => {
-    setSettings(prev => ({ ...prev, github: { ...prev.github, ...updates } }));
-  };
-
+  const updateMessaging = (updates: Partial<MessagingSettings>) => setSettings(prev => ({ ...prev, messaging: { ...prev.messaging, ...updates } }));
+  const updateLoyalty = (updates: Partial<LoyaltySettings>) => setSettings(prev => ({ ...prev, loyalty: { ...prev.loyalty, ...updates } }));
+  const updateGitHub = (updates: Partial<GitHubSettings>) => setSettings(prev => ({ ...prev, github: { ...prev.github, ...updates } }));
   const [isLinking, setIsLinking] = useState(false);
   const storeLogoInputRef = useRef<HTMLInputElement>(null);
 
   const handleGitHubLink = () => {
     setIsLinking(true);
-    // Simulate automated linking flow
     setTimeout(() => {
       updateGitHub({ connected: true, enabled: true, lastSync: new Date().toLocaleString() });
       setIsLinking(false);
@@ -477,76 +468,25 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setSettings(prev => ({ ...prev, logoUrl: event.target?.result as string }));
-    };
+    reader.onload = (event) => setSettings(prev => ({ ...prev, logoUrl: event.target?.result as string }));
     reader.readAsDataURL(file);
   };
 
   return (
     <div className="max-w-5xl space-y-16 animate-in fade-in duration-500 pb-96">
-      
-      {/* BRAND IDENTITY */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><LucideImage className="text-emerald-500" size={32}/> Brand Identity</h3>
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="w-48 h-48 bg-slate-950 rounded-[48px] border border-white/5 flex items-center justify-center overflow-hidden relative group">
             <img src={settings.logoUrl} className="w-full h-full object-contain p-6" />
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => storeLogoInputRef.current?.click()}>
-              <Upload className="text-white" size={32}/>
-            </div>
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => storeLogoInputRef.current?.click()}><Upload className="text-white" size={32}/></div>
             <input ref={storeLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
           </div>
           <div className="flex-1 space-y-4">
-             <h4 className="text-xl font-black text-white uppercase tracking-tight">Store Master Logo</h4>
-             <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Upload your high-resolution brand identifier. This will be visible across the entire client-facing portal and staff vaults.</p>
-             <button onClick={() => storeLogoInputRef.current?.click()} className="bg-emerald-600/10 text-emerald-500 px-8 py-3 rounded-2xl border border-emerald-500/20 font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Select New Media</button>
+             <h4 className="text-xl font-black text-white uppercase tracking-tight">Vault Master Logo</h4>
+             <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Upload the primary branding for your dispensary vault.</p>
+             <button onClick={() => storeLogoInputRef.current?.click()} className="bg-emerald-600/10 text-emerald-500 px-8 py-3 rounded-2xl border border-emerald-500/20 font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Select Media</button>
           </div>
-        </div>
-      </div>
-
-      {/* GITHUB SYNC ENGINE */}
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <div className="flex justify-between items-start">
-           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Github className="text-slate-400" size={32}/> Cloud Sync (GitHub)</h3>
-           {settings.github.connected && (
-             <div className="bg-emerald-500/10 border border-emerald-500/30 px-6 py-2 rounded-full flex items-center gap-3">
-               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Authorized Link</span>
-             </div>
-           )}
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <ToggleRow active={settings.github.enabled} onToggle={() => updateGitHub({enabled: !settings.github.enabled})} label="Vault Versioning" description="Automated commits for every drop." icon={<CloudUpload size={20}/>} />
-          <ToggleRow active={settings.github.autoCommit} onToggle={() => updateGitHub({autoCommit: !settings.github.autoCommit})} label="Zero-Touch Sync" description="Automatic push on SKU changes." icon={<Zap size={20}/>} />
-        </div>
-
-        <div className="pt-8 border-t border-slate-900/50 space-y-10">
-           {!settings.github.connected ? (
-             <button 
-              onClick={handleGitHubLink}
-              disabled={isLinking}
-              className="w-full bg-white text-black py-8 rounded-[40px] font-black uppercase tracking-[8px] text-[13px] flex items-center justify-center gap-4 hover:bg-slate-100 transition-all active:scale-95"
-             >
-               {isLinking ? <RefreshCw className="animate-spin" size={20}/> : <Link2 size={20}/>}
-               {isLinking ? 'ESTABLISHING AUTH...' : 'CONNECT GITHUB REPOSITORY AUTOMATICALLY'}
-             </button>
-           ) : (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><Github size={14}/> Repository Name</label>
-                  <input type="text" value={settings.github.repoName} onChange={e => updateGitHub({repoName: e.target.value})} className="form-input-premium" />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><Clock size={14}/> Last Cloud Sync</label>
-                  <div className="form-input-premium flex items-center justify-between opacity-50 cursor-not-allowed">
-                     <span>{settings.github.lastSync}</span>
-                     <CloudCheck size={16} className="text-emerald-500"/>
-                  </div>
-                </div>
-             </div>
-           )}
         </div>
       </div>
 
@@ -559,46 +499,18 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
           <ToggleRow active={settings.alarmSoundOn} onToggle={() => setSettings(s => ({...s, alarmSoundOn: !s.alarmSoundOn}))} label="Audible Alerts" description="Sonic notifications active." icon={<Volume2 size={20}/>} />
         </div>
       </div>
-
+      
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Bot className="text-blue-500" size={32}/> AI Genetics Engine</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <ToggleRow active={settings.bobbyProOn} onToggle={() => setSettings(s => ({...s, bobbyProOn: !s.bobbyProOn}))} label="Bobby Pro AI" description="Neural budtender assistant." icon={<Zap size={20}/>} />
-          <ToggleRow active={settings.aiScannerEnabled} onToggle={() => setSettings(s => ({...s, aiScannerEnabled: !s.aiScannerEnabled}))} label="Vision Scanner" description="Automatic SKU detection." icon={<Search size={20}/>} />
-          <ToggleRow active={true} onToggle={() => {}} label="BG Removal" description="Automatic studio white rendering." icon={<Sparkles size={20}/>} />
-          <ToggleRow active={true} onToggle={() => {}} label="Semantic Match" description="Dynamic related genetics suggestions." icon={<Layers size={20}/>} />
-        </div>
+        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Github className="text-slate-400" size={32}/> Cloud Sync</h3>
+        {!settings.github.connected ? (
+          <button onClick={handleGitHubLink} disabled={isLinking} className="w-full bg-white text-black py-8 rounded-[40px] font-black uppercase tracking-[8px] text-[13px] flex items-center justify-center gap-4 hover:bg-slate-100 transition-all active:scale-95">
+            {isLinking ? <RefreshCw className="animate-spin" size={20}/> : <Link2 size={20}/>}
+            {isLinking ? 'SYNCING...' : 'CONNECT GITHUB VAULT'}
+          </button>
+        ) : (
+          <div className="flex items-center gap-4 text-emerald-500 font-black uppercase tracking-widest text-xs"><CloudCheck size={20}/> VAULT CONNECTED TO {settings.github.repoName}</div>
+        )}
       </div>
-
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><MessageSquare className="text-purple-500" size={32}/> Client Outreach</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <ToggleRow active={settings.messaging.postPickupEnabled} onToggle={() => updateMessaging({postPickupEnabled: !settings.messaging.postPickupEnabled})} label="Post-Pickup Comms" description="Automated follow-up messages." icon={<Check size={20}/>} />
-          <ToggleRow active={settings.messaging.aiPersonalization} onToggle={() => updateMessaging({aiPersonalization: !settings.messaging.aiPersonalization})} label="AI Personalization" description="Tailored outreach content." icon={<Wand2 size={20}/>} />
-        </div>
-      </div>
-
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Coins className="text-yellow-500" size={32}/> Loyalty Stash</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <ToggleRow active={settings.loyalty.enabled} onToggle={() => updateLoyalty({enabled: !settings.loyalty.enabled})} label="Stash Program" description="Enable points accumulation." icon={<Gift size={20}/>} />
-        </div>
-      </div>
-
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><ShieldCheck className="text-red-500" size={32}/> Security & Auth</h3>
-        <div className="space-y-10">
-          <FormField label="Staff Password" icon={<Lock size={14}/>}>
-            <input type="text" value={settings.adminPassword} onChange={e => setSettings(s => ({...s, adminPassword: e.target.value}))} className="form-input-premium tracking-[8px]" />
-          </FormField>
-          <ToggleRow active={settings.customerPinEnabled} onToggle={() => setSettings(s => ({...s, customerPinEnabled: !s.customerPinEnabled}))} label="Menu Entry PIN" description="Require PIN for customer access." icon={<Lock size={20}/>} />
-          {settings.customerPinEnabled && <input type="text" value={settings.customerPin} onChange={e => setSettings(s => ({...s, customerPin: e.target.value}))} className="form-input-premium tracking-[15px] text-center" />}
-        </div>
-      </div>
-      <style>{`
-        .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 32px; padding: 24px 32px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; }
-        .form-input-premium:focus { border-color: #10b981; background: #000; box-shadow: 0 0 30px rgba(16,185,129,0.1); }
-      `}</style>
     </div>
   );
 };
@@ -619,7 +531,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
   const handleAddNewProduct = () => {
     const newProduct: Product = {
       id: Math.random().toString(36).substr(2,9).toUpperCase(),
-      name: '', brand: brands[0], category: categories[0], type: StrainType.Hybrid, thc: 0,
+      name: '', brand: brands[0] || 'Unknown', category: categories[0] || 'Uncategorized', type: StrainType.Hybrid, thc: 0,
       description: '', shortDescription: '', tags: [], image: 'https://picsum.photos/seed/sku/800/800',
       brandLogo: 'https://picsum.photos/seed/brand/200/200', weights: [{ weight: '3.5g', price: 0, stock: 0 }], isPublished: true
     };
@@ -631,11 +543,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
     <div className="flex h-screen w-full bg-[#05070a] text-slate-100 overflow-hidden font-sans relative">
       <aside className="w-24 bg-[#0a0d14] border-r border-slate-900 flex flex-col items-center py-10 z-[100] shadow-2xl">
         <div className="mb-12">
-          {settings.logoUrl ? (
-            <img src={settings.logoUrl} className="w-12 h-12 rounded-2xl object-cover shadow-2xl" />
-          ) : (
-            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">R</div>
-          )}
+          {settings.logoUrl ? <img src={settings.logoUrl} className="w-12 h-12 rounded-2xl object-cover shadow-2xl" /> : <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">R</div>}
         </div>
         <nav className="flex-1 flex flex-col gap-10 items-center">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
@@ -643,20 +551,12 @@ const AdminApp: React.FC<AdminAppProps> = ({
           <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={24}/>} title="SKUs" />
           <SidebarIconButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={24}/>} title="Tools" />
         </nav>
-        <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group">
-          <LogOut size={26}/><span className="text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span>
-        </button>
+        <button onClick={onExit} className="mt-auto p-4 text-slate-700 hover:text-rose-500 transition-colors cursor-pointer group"><LogOut size={26}/><span className="text-[7px] font-black uppercase mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Exit</span></button>
       </aside>
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
         <header className="h-28 flex items-center justify-between px-14 border-b border-slate-900/50 bg-[#05070a] z-[90]">
-          <div className="flex items-center gap-10">
-            <h2 className="text-4xl font-black uppercase tracking-[4px] text-white leading-none">{activeTab.toUpperCase()}</h2>
-            <div className={`flex items-center gap-4 px-6 py-3 rounded-2xl border font-black uppercase tracking-widest text-[9px] ${settings.isStoreOpen ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500' : 'bg-rose-500/10 border-rose-500/50 text-rose-500'}`}>
-              <div className={`w-2 h-2 rounded-full ${settings.isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
-              {settings.isStoreOpen ? 'Menu: Live' : 'Menu: Sleep'}
-            </div>
-          </div>
+          <h2 className="text-4xl font-black uppercase tracking-[4px] text-white leading-none">{activeTab.toUpperCase()}</h2>
           <button onClick={onExit} className="bg-slate-900 px-8 py-4 rounded-[20px] border border-slate-800 text-[10px] font-black uppercase tracking-[3px] hover:border-rose-500/50 hover:text-rose-500 transition-all">Vault Lock</button>
         </header>
 
@@ -669,13 +569,9 @@ const AdminApp: React.FC<AdminAppProps> = ({
       </main>
 
       {editingProduct && (
-        <PerfectFlowProductModal 
-          product={editingProduct} 
-          categories={categories} 
-          setCategories={setCategories}
-          brands={brands} 
-          setBrands={setBrands}
-          onClose={() => setEditingProduct(null)} 
+        <AllInOneProductTool 
+          product={editingProduct} categories={categories} setCategories={setCategories}
+          brands={brands} setBrands={setBrands} onClose={() => setEditingProduct(null)} 
           onSave={p => setProducts(prev => prev.map(old => old.id === p.id ? p : old))} 
           onDelete={() => { setProducts(prev => prev.filter(p => p.id !== editingProduct.id)); setEditingProduct(null); }} 
         />

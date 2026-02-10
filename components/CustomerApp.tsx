@@ -31,7 +31,7 @@ import {
   EyeOff,
   User as UserIcon,
   LogOut,
-  Map,
+  Map as MapIcon,
   PlusCircle,
   Phone,
   Settings as SettingsIcon,
@@ -93,6 +93,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'store'|'orders'|'account'>('store');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeBrand, setActiveBrand] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedWeight, setSelectedWeight] = useState<WeightPrice | null>(null);
   const [selectedQty, setSelectedQty] = useState(1);
@@ -118,9 +119,22 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
     }
   }, [currentUser, checkoutData.name, setCheckoutData]);
 
+  // Step-by-Step Selection Logic
+  const availableBrandsForCategory = useMemo(() => {
+    if (!activeCategory) return [];
+    const brandsMap = new window.Map<string, string>();
+    products.forEach(p => {
+      if (p.category === activeCategory && p.isPublished) {
+        brandsMap.set(p.brand, p.brandLogo);
+      }
+    });
+    return Array.from(brandsMap.entries()).map(([name, logo]) => ({ name, logo }));
+  }, [products, activeCategory]);
+
   const filteredProducts = useMemo(() => {
     let result = products.filter(p => p.isPublished);
     if (activeCategory) result = result.filter(p => p.category === activeCategory);
+    if (activeBrand) result = result.filter(p => p.brand === activeBrand);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(p => 
@@ -130,7 +144,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
       );
     }
     return result;
-  }, [products, activeCategory, searchQuery]);
+  }, [products, activeCategory, activeBrand, searchQuery]);
 
   const relatedProducts = useMemo(() => {
     if (!selectedProduct) return [];
@@ -225,7 +239,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="Search premium genetics..." className="w-full bg-slate-100 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold outline-none text-slate-900 placeholder:text-slate-400" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <input type="text" placeholder="Search premium genetics..." className="w-full bg-slate-100 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold outline-none text-slate-950 placeholder:text-slate-400" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
         </div>
@@ -234,47 +248,114 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
       <div className="max-w-4xl mx-auto p-4 space-y-8 mt-4">
         {!selectedProduct && (
           <>
-            <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
-              {categories.map((cat) => (
-                <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} className={`flex flex-col items-center justify-center p-5 min-w-[120px] rounded-[32px] border transition-all active:scale-95 ${activeCategory === cat ? 'bg-emerald-600 border-emerald-500 shadow-xl text-white' : 'bg-white border-slate-100 text-slate-700 shadow-md'}`}>
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${activeCategory === cat ? 'bg-white/20' : 'bg-emerald-50 text-emerald-600'}`}>{getCategoryIcon(cat)}</div>
-                  <span className="text-[11px] font-black uppercase tracking-widest">{cat}</span>
-                </button>
-              ))}
+            {/* Step 1: Category Selection */}
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] ml-4 flex items-center gap-2">
+                {activeCategory ? <Check size={12} className="text-emerald-500" /> : <div className="w-3 h-3 rounded-full border border-slate-300" />}
+                Step 1: Select Category
+              </h4>
+              <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                {categories.map((cat) => (
+                  <button key={cat} onClick={() => { setActiveCategory(cat); setActiveBrand(null); }} className={`flex flex-col items-center justify-center p-5 min-w-[120px] rounded-[32px] border transition-all active:scale-95 ${activeCategory === cat ? 'bg-emerald-600 border-emerald-500 shadow-xl text-white' : 'bg-white border-slate-100 text-slate-700 shadow-md'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${activeCategory === cat ? 'bg-white/20' : 'bg-emerald-50 text-emerald-600'}`}>{getCategoryIcon(cat)}</div>
+                    <span className="text-[11px] font-black uppercase tracking-widest">{cat}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {filteredProducts.map(product => {
-                const lowestPrice = Math.min(...product.weights.map(w => w.price));
-                const isFavorite = favorites.includes(product.id);
-                return (
-                  <div key={product.id} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all flex flex-col group relative">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
-                      className={`absolute top-4 right-4 z-10 p-2 rounded-full backdrop-blur-md transition-all active:scale-75 ${isFavorite ? 'bg-rose-500/20 text-rose-500' : 'bg-white/40 text-slate-400 hover:text-rose-400'}`}
-                    >
-                      <Heart size={20} fill={isFavorite ? "currentColor" : "none"} strokeWidth={2.5} />
-                    </button>
-                    
-                    <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="aspect-[4/5] relative overflow-hidden bg-slate-50 cursor-pointer">
-                      <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 duration-700" />
-                      <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl text-[10px] font-black text-slate-900 flex items-center gap-2 border border-slate-200 shadow-lg"><img src={product.brandLogo} className="w-4 h-4 rounded-full" /> {product.brand}</div>
-                    </div>
-                    <div className="p-6 flex-1 flex flex-col justify-between">
-                      <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="cursor-pointer">
-                        <h3 className="font-black text-slate-900 leading-tight mb-1 text-base">{product.name}</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[2px]">{product.type}</p>
+
+            {/* Step 2: Brand Selection (Visible after Category) */}
+            {activeCategory && (
+              <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center justify-between ml-4 mr-4">
+                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] flex items-center gap-2">
+                    {activeBrand ? <Check size={12} className="text-emerald-500" /> : <div className="w-3 h-3 rounded-full border border-slate-300" />}
+                    Step 2: Select Brand in {activeCategory}
+                  </h4>
+                  {activeBrand && <button onClick={() => setActiveBrand(null)} className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Reset</button>}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {availableBrandsForCategory.map((brand) => (
+                    <button key={brand.name} onClick={() => setActiveBrand(brand.name)} className={`flex flex-col items-center justify-center p-8 rounded-[40px] border transition-all active:scale-95 ${activeBrand === brand.name ? 'bg-slate-900 border-slate-800 shadow-xl text-white' : 'bg-white border-slate-100 text-slate-700 shadow-sm'}`}>
+                      <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-50 mb-4 border border-slate-100 shadow-inner">
+                        <img src={brand.logo} className="w-full h-full object-cover" />
                       </div>
-                      <div className="flex items-center justify-between mt-6">
-                        <span className="text-base text-emerald-600 font-black">${lowestPrice}</span>
-                        <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl group-hover:bg-emerald-600 transition-colors cursor-pointer">
-                          <Plus size={20} />
+                      <span className="text-[11px] font-black uppercase tracking-widest text-center">{brand.name}</span>
+                    </button>
+                  ))}
+                  {availableBrandsForCategory.length === 0 && (
+                    <div className="col-span-2 p-12 text-center bg-slate-50 rounded-[40px] border border-slate-100 border-dashed">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">No brands available in this section yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Product List (Visible after Brand) */}
+            {activeBrand && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-8 border-t border-slate-100">
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] ml-4 flex items-center gap-2">
+                  <Sparkles size={12} className="text-emerald-500" />
+                  Step 3: Available Flavors by {activeBrand}
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {filteredProducts.map(product => {
+                    const lowestPrice = Math.min(...product.weights.map(w => w.price));
+                    const isFavorite = favorites.includes(product.id);
+                    return (
+                      <div key={product.id} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all flex flex-col group relative">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
+                          className={`absolute top-4 right-4 z-10 p-2 rounded-full backdrop-blur-md transition-all active:scale-75 ${isFavorite ? 'bg-rose-500/20 text-rose-500' : 'bg-white/40 text-slate-400 hover:text-rose-400'}`}
+                        >
+                          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} strokeWidth={2.5} />
+                        </button>
+                        
+                        <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="aspect-[4/5] relative overflow-hidden bg-slate-50 cursor-pointer">
+                          <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 duration-700" />
+                        </div>
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                          <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="cursor-pointer">
+                            <h3 className="font-black text-slate-900 leading-tight mb-1 text-base">{product.name}</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[2px]">{product.type} • {product.thc}% THC</p>
+                          </div>
+                          <div className="flex items-center justify-between mt-6">
+                            <span className="text-base text-emerald-600 font-black">${lowestPrice}</span>
+                            <div onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl group-hover:bg-emerald-600 transition-colors cursor-pointer">
+                              <Plus size={20} />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Global Search Results override (only shows when searching) */}
+            {searchQuery && !activeCategory && (
+              <div className="space-y-4 animate-in fade-in duration-500">
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] ml-4">Global Search Results</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {filteredProducts.map(product => {
+                    const lowestPrice = Math.min(...product.weights.map(w => w.price));
+                    return (
+                      <div key={product.id} onClick={() => { setSelectedProduct(product); setSelectedWeight(null); }} className="bg-white rounded-[44px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer">
+                        <div className="aspect-square relative overflow-hidden bg-slate-50">
+                          <img src={product.image} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="p-6">
+                          <h3 className="font-black text-slate-900 text-sm truncate">{product.name}</h3>
+                          <span className="text-emerald-600 font-black text-xs">${lowestPrice}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -295,7 +376,14 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
             </div>
             <div className="p-8 max-w-4xl mx-auto space-y-12">
               <div className="flex justify-between items-end">
-                <div className="space-y-3"><h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">{selectedProduct.name}</h2><p className="text-sm font-bold text-slate-400 uppercase tracking-[4px]">{selectedProduct.brand} • {selectedProduct.type}</p></div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <img src={selectedProduct.brandLogo} className="w-6 h-6 rounded-full shadow-sm" />
+                    <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">{selectedProduct.brand}</span>
+                  </div>
+                  <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">{selectedProduct.name}</h2>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-[4px]">{selectedProduct.type} Genetics</p>
+                </div>
                 <div className="bg-emerald-50 px-8 py-5 rounded-[40px] border border-emerald-100 text-center shadow-sm"><span className="block text-[10px] text-emerald-600 font-black uppercase mb-1 tracking-widest">THC Value</span><span className="text-3xl font-black text-emerald-900">{selectedProduct.thc}%</span></div>
               </div>
 
@@ -305,51 +393,17 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
               </div>
 
               <div className="space-y-8">
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[6px] ml-2 flex items-center gap-2"><Layers size={14}/> Available Weights</h4>
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[6px] ml-2 flex items-center gap-2"><Layers size={14}/> Authorized Formats</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {selectedProduct.weights.map(w => (
                     <button key={w.weight} disabled={w.stock === 0} onClick={() => { setSelectedWeight(w); setSelectedQty(1); }} className={`p-10 border-2 rounded-[48px] flex flex-col items-center transition-all ${selectedWeight?.weight === w.weight ? 'border-emerald-600 bg-emerald-50/50 shadow-xl scale-[1.02]' : 'border-slate-100 bg-white active:scale-95'} ${w.stock === 0 ? 'opacity-30 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-emerald-200'}`}>
                       <span className="font-black text-slate-900 text-3xl">{w.weight}</span>
                       <span className="text-emerald-600 font-black text-2xl mt-2">${w.price}</span>
+                      {w.stock > 0 && w.stock < 10 && <span className="mt-4 text-[9px] font-black text-rose-500 uppercase tracking-widest">Low Stock: {w.stock}</span>}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {relatedProducts.length > 0 && (
-                <div className="space-y-8 pt-12 border-t border-slate-100">
-                  <div className="flex items-center justify-between ml-2">
-                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[6px] flex items-center gap-2"><Sparkles size={14}/> Similar Genetics</h4>
-                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-full">Curated for You</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {relatedProducts.map(p => {
-                      const isRelFavorite = favorites.includes(p.id);
-                      return (
-                        <div key={p.id} className="bg-white rounded-[40px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col relative">
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                            className={`absolute top-3 right-3 z-10 p-1.5 rounded-full backdrop-blur-md transition-all active:scale-75 ${isRelFavorite ? 'bg-rose-500/20 text-rose-500' : 'bg-white/40 text-slate-400'}`}
-                          >
-                            <Heart size={16} fill={isRelFavorite ? "currentColor" : "none"} strokeWidth={2.5} />
-                          </button>
-                          
-                          <div onClick={() => { setSelectedProduct(p); setSelectedWeight(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="aspect-square relative overflow-hidden bg-slate-50">
-                            <img src={p.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                          </div>
-                          <div onClick={() => { setSelectedProduct(p); setSelectedWeight(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-6">
-                            <h5 className="font-black text-slate-900 text-sm leading-tight truncate">{p.name}</h5>
-                            <div className="flex items-center justify-between mt-3">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{p.type}</span>
-                              <span className="text-emerald-600 font-black text-xs">${Math.min(...p.weights.map(w => w.price))}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
             
             <div className="fixed bottom-0 left-0 right-0 p-8 bg-white/95 backdrop-blur-3xl border-t border-slate-100 z-[610]">
@@ -360,7 +414,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                   className="w-full bg-emerald-600 text-white font-black py-8 rounded-[48px] shadow-2xl active:scale-95 text-[12px] uppercase tracking-[6px] disabled:opacity-50 transition-all flex items-center justify-center gap-4"
                  >
                    {selectedWeight ? <Check size={20}/> : <Plus size={20}/>}
-                   AUTHORIZE ADD TO BAG — ${selectedWeight?.price || 0}
+                   CONFIRM SELECTION — ${selectedWeight?.price || 0}
                  </button>
                </div>
             </div>
@@ -428,7 +482,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
       <div className="pb-36">{activeTab === 'store' && renderStore()}{activeTab === 'orders' && renderOrders()}{activeTab === 'account' && renderAccount()}</div>
       
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t px-8 py-10 flex justify-around items-center z-[120] shadow-[0_-20px_50px_rgba(0,0,0,0.05)] rounded-t-[64px]">
-        <button onClick={() => setActiveTab('store')} className={`flex flex-col items-center gap-2.5 transition-all ${activeTab === 'store' ? 'text-emerald-600 scale-110' : 'text-slate-300'}`}><Store size={30} /><span className="text-[9px] font-black uppercase tracking-[6px]">Menu</span></button>
+        <button onClick={() => { setActiveTab('store'); setActiveCategory(null); setActiveBrand(null); }} className={`flex flex-col items-center gap-2.5 transition-all ${activeTab === 'store' ? 'text-emerald-600 scale-110' : 'text-slate-300'}`}><Store size={30} /><span className="text-[9px] font-black uppercase tracking-[6px]">Menu</span></button>
         <button onClick={() => setActiveTab('orders')} className={`flex flex-col items-center gap-2.5 transition-all ${activeTab === 'orders' ? 'text-emerald-600 scale-110' : 'text-slate-300'}`}><History size={30} /><span className="text-[9px] font-black uppercase tracking-[6px]">Queue</span></button>
         <button onClick={() => setActiveTab('account')} className={`flex flex-col items-center gap-2.5 transition-all ${activeTab === 'account' ? 'text-emerald-600 scale-110' : 'text-slate-300'}`}><Star size={30} /><span className="text-[9px] font-black uppercase tracking-[6px]">Vault</span></button>
       </nav>
