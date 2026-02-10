@@ -48,10 +48,14 @@ import {
   Camera,
   Scan,
   CircleDashed,
-  Crosshair
+  Crosshair,
+  Cpu,
+  Mic,
+  BrainCircuit,
+  Binary
 } from 'lucide-react';
 import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessagingSettings, LoyaltySettings, GitHubSettings, CustomProtocol } from '../types';
-import { generateProductDescription, removeImageBackground, scanProductFromImage } from '../services/geminiService';
+import { generateProductDescription, removeImageBackground, aiInventoryWizard } from '../services/geminiService';
 
 interface AdminAppProps {
   products: Product[];
@@ -179,14 +183,17 @@ const OrderManager: React.FC<{ orders: Order[]; updateOrderStatus: (id: string, 
   );
 };
 
-const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => void; onAdd: () => void }> = ({ products, onEdit, onAdd }) => {
+const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => void; onAdd: () => void; onAiAdd: () => void }> = ({ products, onEdit, onAdd, onAiAdd }) => {
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-20">
       <div className="flex justify-between items-center">
         <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[6px]">Active Vault Inventory ({products.length})</h3>
         <div className="flex gap-4">
-           <button onClick={onAdd} className="bg-emerald-600 text-white px-10 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 shadow-2xl active:scale-95 transition-all">
-            <Plus size={18} /> New Product SKU
+           <button onClick={onAiAdd} className="bg-slate-900 text-emerald-400 px-8 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 border border-emerald-500/20 shadow-xl hover:bg-emerald-600 hover:text-white transition-all group">
+            <BrainCircuit size={18} className="group-hover:animate-pulse" /> AI VAULT GENETICIST
+          </button>
+          <button onClick={onAdd} className="bg-slate-900 text-white px-8 py-5 rounded-[28px] font-black uppercase tracking-[4px] text-[11px] flex items-center gap-3 border border-slate-800 shadow-xl transition-all">
+            <Plus size={18} /> Manual SKU
           </button>
         </div>
       </div>
@@ -197,7 +204,14 @@ const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => vo
           return (
             <div key={product.id} onClick={() => onEdit(product)} className="bg-[#0a0d14] border border-slate-900 rounded-[56px] overflow-hidden group cursor-pointer hover:border-emerald-500/30 transition-all shadow-2xl relative">
               <div className="aspect-[4/3] relative bg-slate-950 overflow-hidden">
-                <img src={product.image} className="w-full h-full object-contain p-8 group-hover:scale-110 duration-1000" />
+                {product.image ? (
+                  <img src={product.image} className="w-full h-full object-contain p-8 group-hover:scale-110 duration-1000" />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-800 gap-4">
+                     <ImageIcon size={64}/>
+                     <span className="text-[8px] font-black uppercase tracking-widest">No Genetics Image</span>
+                  </div>
+                )}
                 <div className="absolute top-6 left-6 flex gap-2">
                   <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl text-[8px] font-black text-black flex items-center gap-2 border border-white/5 shadow-2xl"><img src={product.brandLogo} className="w-4 h-4 rounded-full" /> {product.brand}</div>
                   <div className={`px-4 py-2 rounded-2xl text-[8px] font-black text-white border border-white/5 shadow-2xl ${product.isPublished ? 'bg-emerald-600' : 'bg-rose-600'}`}>{product.isPublished ? 'LIVE' : 'HIDDEN'}</div>
@@ -224,6 +238,193 @@ const ProductManager: React.FC<{ products: Product[]; onEdit: (p: Product) => vo
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+};
+
+const AiVaultWizard: React.FC<{ 
+  onSave: (p: Product) => void; 
+  onClose: () => void;
+  brands: string[];
+  categories: string[];
+}> = ({ onSave, onClose, brands, categories }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [inputMethod, setInputMethod] = useState<'text' | 'image'>('text');
+  const [textInput, setTextInput] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState<Partial<Product> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProcess = async () => {
+    setIsProcessing(true);
+    let result;
+    if (inputMethod === 'image' && imagePreview) {
+      const base64 = imagePreview.split(',')[1];
+      result = await aiInventoryWizard({ image: { data: base64, mimeType: 'image/jpeg' } });
+    } else {
+      result = await aiInventoryWizard({ text: textInput });
+    }
+
+    if (result) {
+      setExtractedData(result);
+    }
+    setIsProcessing(false);
+  };
+
+  const handleConfirm = () => {
+    if (!extractedData) return;
+    const finalProduct: Product = {
+      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      name: extractedData.name || 'Unknown Genetics',
+      brand: extractedData.brand || 'Unknown',
+      category: extractedData.category || categories[0],
+      type: (extractedData.type as StrainType) || StrainType.Hybrid,
+      thc: extractedData.thc || 0,
+      description: extractedData.description || '',
+      shortDescription: extractedData.description?.slice(0, 50) + '...' || '',
+      tags: [],
+      image: imagePreview || '',
+      brandLogo: 'https://picsum.photos/seed/brand/200/200',
+      weights: extractedData.weights || [{ weight: '3.5g', price: 0, stock: 0 }],
+      isPublished: true
+    };
+    onSave(finalProduct);
+    onClose();
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string);
+      setInputMethod('image');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-[#05070a]/98 backdrop-blur-3xl" onClick={onClose}></div>
+      <div className="relative w-full max-w-2xl bg-[#0a0d14] rounded-[64px] border border-white/5 overflow-hidden flex flex-col shadow-[0_0_120px_rgba(0,0,0,1)] animate-in zoom-in-95 duration-500">
+        
+        {/* Animated Scanner Grid Backdrop */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+           <div className="w-full h-full bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:40px_40px]"></div>
+        </div>
+
+        <div className="p-12 pb-8 border-b border-white/5 relative z-10">
+           <div className="flex justify-between items-start">
+              <div className="space-y-4">
+                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">AI VAULT<br/>GENETICIST</h2>
+                 <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[5px] flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    AUTONOMOUS SYSTEM ONLINE
+                 </p>
+              </div>
+              <button onClick={onClose} className="p-4 bg-slate-900 text-slate-500 rounded-full hover:text-white transition-all"><X size={28}/></button>
+           </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-12 space-y-12 relative z-10 custom-scrollbar no-scrollbar">
+          {!extractedData ? (
+            <div className="space-y-10">
+               <div className="grid grid-cols-2 gap-6">
+                  <button onClick={() => setInputMethod('text')} className={`p-8 rounded-[40px] border transition-all flex flex-col items-center gap-4 ${inputMethod === 'text' ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-500' : 'bg-slate-950 border-white/5 text-slate-600'}`}>
+                     <MessageSquare size={32}/>
+                     <span className="text-[10px] font-black uppercase tracking-widest">Text Logic</span>
+                  </button>
+                  <button onClick={() => fileInputRef.current?.click()} className={`p-8 rounded-[40px] border transition-all flex flex-col items-center gap-4 ${inputMethod === 'image' ? 'bg-emerald-600/10 border-emerald-500/50 text-emerald-500' : 'bg-slate-950 border-white/5 text-slate-600'}`}>
+                     <Camera size={32}/>
+                     <span className="text-[10px] font-black uppercase tracking-widest">Visual DNA</span>
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+               </div>
+
+               {inputMethod === 'text' ? (
+                 <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[5px] ml-4">Product Transmission Narrative</label>
+                    <textarea 
+                      value={textInput}
+                      onChange={e => setTextInput(e.target.value)}
+                      placeholder="Ex: 'Add 5 units of Connected Gushers, Hybrid, 28% THC, $60 per 3.5g'"
+                      className="w-full bg-slate-950 border border-white/5 p-10 rounded-[48px] text-white font-medium text-lg min-h-[160px] outline-none focus:border-emerald-500 transition-all leading-relaxed" 
+                    />
+                 </div>
+               ) : (
+                 <div className="aspect-video relative bg-slate-950 rounded-[48px] border border-white/5 overflow-hidden flex items-center justify-center">
+                    {imagePreview ? (
+                      <img src={imagePreview} className="w-full h-full object-contain p-8" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-4 text-slate-700">
+                        <ImageIcon size={64}/>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Capture DNA Packaging</span>
+                      </div>
+                    )}
+                    {isProcessing && <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-sm animate-pulse"></div>}
+                 </div>
+               )}
+
+               <button 
+                onClick={handleProcess} 
+                disabled={isProcessing || (inputMethod === 'text' ? !textInput : !imagePreview)}
+                className="w-full bg-emerald-600 text-white py-8 rounded-[48px] font-black uppercase tracking-[8px] text-[13px] shadow-2xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4"
+               >
+                 {isProcessing ? <RefreshCw className="animate-spin" size={20}/> : <Cpu size={20}/>}
+                 {isProcessing ? 'DECODING GENETICS...' : 'AUTHORIZE AI ANALYSIS'}
+               </button>
+            </div>
+          ) : (
+            <div className="space-y-10 animate-in fade-in duration-500">
+               <div className="flex items-center gap-6 p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[40px]">
+                  <div className="w-16 h-16 bg-emerald-500 rounded-[28px] flex items-center justify-center text-white"><Check size={32}/></div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight uppercase">Genetics Decoded</h3>
+                    <p className="text-[9px] text-emerald-500 font-black uppercase tracking-[4px]">High Confidence Match</p>
+                  </div>
+               </div>
+
+               <div className="space-y-8">
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Strain Name</span>
+                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">{extractedData.name}</div>
+                    </div>
+                    <div className="space-y-2">
+                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Brand Owner</span>
+                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">{extractedData.brand}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">THC %</span>
+                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-emerald-500 font-black">{extractedData.thc}%</div>
+                    </div>
+                    <div className="space-y-2">
+                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Type</span>
+                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">{extractedData.type}</div>
+                    </div>
+                    <div className="space-y-2">
+                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Price Est.</span>
+                       <div className="bg-slate-950 p-6 rounded-[28px] border border-white/5 text-white font-black">${extractedData.weights?.[0]?.price}</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-4">Narrative DNA</span>
+                    <div className="bg-slate-950 p-8 rounded-[36px] border border-white/5 text-slate-400 text-sm italic font-medium">"{extractedData.description}"</div>
+                  </div>
+               </div>
+
+               <div className="flex gap-4">
+                  <button onClick={() => setExtractedData(null)} className="flex-1 py-7 bg-slate-900 text-slate-500 rounded-[40px] font-black uppercase tracking-[4px] text-[10px]">Re-Analyze</button>
+                  <button onClick={handleConfirm} className="flex-[2] py-7 bg-emerald-600 text-white rounded-[40px] font-black uppercase tracking-[6px] text-[11px] shadow-2xl">Confirm Vault Entry</button>
+               </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -288,7 +489,7 @@ const AllInOneProductTool: React.FC<{
         
         if (field === 'scan') {
           try {
-            const scannedData = await scanProductFromImage(base64Data, mimeType);
+            const scannedData = await aiInventoryWizard({ image: { data: base64Data, mimeType } });
             if (scannedData) {
               const normalizedType = scannedData.type ? (scannedData.type.charAt(0).toUpperCase() + scannedData.type.slice(1).toLowerCase()) : data.type;
               
@@ -347,22 +548,6 @@ const AllInOneProductTool: React.FC<{
     setIsAiGenerating(false);
   };
 
-  const addCategory = () => {
-    if (!newCat.trim()) return;
-    if (!categories.includes(newCat)) setCategories(prev => [...prev, newCat]);
-    setData(prev => ({ ...prev, category: newCat }));
-    setNewCat('');
-    setShowAddCat(false);
-  };
-
-  const addBrand = () => {
-    if (!newBrand.trim()) return;
-    if (!brands.includes(newBrand)) setBrands(prev => [...prev, newBrand]);
-    setData(prev => ({ ...prev, brand: newBrand }));
-    setNewBrand('');
-    setShowAddBrand(false);
-  };
-
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-3xl animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-[#05070a]/95" onClick={onClose}></div>
@@ -389,7 +574,7 @@ const AllInOneProductTool: React.FC<{
         </div>
 
         <div className="flex-1 overflow-y-auto p-12 pt-0 space-y-12 custom-scrollbar no-scrollbar">
-          {/* Lens Visual - Enhanced for 'Google Lens' Experience */}
+          {/* Lens Visual */}
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-4">
@@ -417,43 +602,29 @@ const AllInOneProductTool: React.FC<{
                 </div>
               )}
 
-              {/* Google Lens Style Scanning Overlay */}
               {isScanning && (
                 <div className="absolute inset-0 z-20 pointer-events-none">
-                  {/* Laser Line */}
                   <div className="absolute left-0 right-0 h-[2px] bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,1)] animate-scan z-30"></div>
-                  {/* Scanning Dots Backdrop */}
                   <div className="absolute inset-0 bg-emerald-900/10 backdrop-blur-[2px] animate-pulse"></div>
-                  {/* Floating Diagnostic Points */}
                   <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping"></div>
                   <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping delay-300"></div>
                   <div className="absolute bottom-1/4 left-1/2 w-2 h-2 bg-emerald-400 rounded-full shadow-lg animate-ping delay-700"></div>
-                  
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                     <span className="text-[11px] font-black text-white uppercase tracking-[10px] mt-20 animate-bounce">
-                      ANALYZING DNA
-                    </span>
+                     <span className="text-[11px] font-black text-white uppercase tracking-[10px] mt-20 animate-bounce">ANALYZING DNA</span>
                   </div>
                 </div>
               )}
 
               {isProcessing && (
                 <div className="absolute inset-0 bg-[#0a0d14]/80 backdrop-blur-2xl flex flex-col items-center justify-center animate-in fade-in z-20">
-                  <div className="relative">
-                    <RefreshCw className="animate-spin text-emerald-500 mb-6" size={48}/>
-                    <div className="absolute inset-0 blur-xl bg-emerald-500/20"></div>
-                  </div>
-                  <span className="text-[10px] font-black text-white uppercase tracking-[5px]">
-                    POLISHING IMAGE...
-                  </span>
+                  <div className="relative"><RefreshCw className="animate-spin text-emerald-500 mb-6" size={48}/><div className="absolute inset-0 blur-xl bg-emerald-500/20"></div></div>
+                  <span className="text-[10px] font-black text-white uppercase tracking-[5px]">POLISHING IMAGE...</span>
                 </div>
               )}
               
               {scanFeedback && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-8 py-4 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.4)] border border-white/10 animate-in zoom-in-95 z-40">
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3 whitespace-nowrap">
-                    <Check size={16}/> {scanFeedback}
-                  </span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3 whitespace-nowrap"><Check size={16}/> {scanFeedback}</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
@@ -464,7 +635,6 @@ const AllInOneProductTool: React.FC<{
             <input ref={scanInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileCapture(e, 'scan')} />
           </div>
 
-          {/* Form Content */}
           <div className="space-y-10">
             <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[5px] flex items-center gap-4"><LucideImage size={14}/> BRAND IDENTITY (LOGO)</h4>
             <div className="h-48 relative bg-slate-950 rounded-[48px] border border-white/5 group overflow-hidden shadow-inner flex items-center justify-center">
@@ -479,7 +649,6 @@ const AllInOneProductTool: React.FC<{
               <FormField label="FLAVOR / STRAIN NAME" icon={<Sparkles size={16}/>}>
                 <input value={data.name} onChange={e => setData({...data, name: e.target.value})} className="form-input-premium text-2xl py-8" placeholder="Ex. Purple Runtz..." />
               </FormField>
-              
               <div className="grid grid-cols-2 gap-8">
                 <FormField label="THC LEVEL (%)" icon={<TrendingUp size={16}/>}>
                   <input type="number" step="0.1" value={data.thc} onChange={e => setData({...data, thc: parseFloat(e.target.value) || 0})} className="form-input-premium py-6" />
@@ -500,24 +669,11 @@ const AllInOneProductTool: React.FC<{
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-12 pt-8 border-t border-white/5 bg-[#0a0d14] flex gap-8 shrink-0 z-10">
-          <button 
-            onClick={onDelete} 
-            className="w-24 h-24 rounded-[32px] bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-90 flex items-center justify-center"
-          >
-            <Trash2 size={40}/>
-          </button>
-          
-          <button 
-            onClick={onClose} 
-            className="flex-1 bg-emerald-600 text-white font-black rounded-[48px] uppercase tracking-[8px] text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none"
-          >
+          <button onClick={onDelete} className="w-24 h-24 rounded-[32px] bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all active:scale-90 flex items-center justify-center"><Trash2 size={40}/></button>
+          <button onClick={onClose} className="flex-1 bg-emerald-600 text-white font-black rounded-[48px] uppercase tracking-[8px] text-[14px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-none">
             <div className="mb-1 text-xs">AUTHORIZE</div>
-            <div className="flex items-center gap-3">
-              <span className="opacity-50 text-[10px]">&</span>
-              <span>SAVE PRODUCT</span>
-            </div>
+            <div className="flex items-center gap-3"><span className="opacity-50 text-[10px]">&</span><span>SAVE PRODUCT</span></div>
           </button>
         </div>
       </div>
@@ -525,17 +681,8 @@ const AllInOneProductTool: React.FC<{
         .form-input-premium { width: 100%; background: #05070a; border: 1px solid rgba(255,255,255,0.05); border-radius: 32px; padding: 24px; font-weight: 900; color: white; outline: none; transition: all 0.3s; appearance: none; }
         .form-input-premium:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.1); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        @keyframes scan {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-        .animate-scan {
-          position: absolute;
-          animation: scan 2s linear infinite;
-        }
+        @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .animate-scan { position: absolute; animation: scan 2s linear infinite; }
       `}</style>
     </div>
   );
@@ -593,12 +740,12 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
           </div>
           <div className="flex-1 space-y-4">
              <h4 className="text-xl font-black text-white uppercase tracking-tight">Vault Master Logo</h4>
-             <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Upload the primary branding for your dispensary vault.</p>
+             <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Upload branding.</p>
              <button onClick={() => storeLogoInputRef.current?.click()} className="bg-emerald-600/10 text-emerald-500 px-8 py-3 rounded-2xl border border-emerald-500/20 font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Select Media</button>
           </div>
         </div>
       </div>
-
+      
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Globe className="text-emerald-500" size={32}/> Operations Master</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -638,51 +785,6 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
            </FormField>
         </div>
       </div>
-
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <div className="flex items-center justify-between">
-           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Ticket className="text-emerald-500" size={32}/> Loyalty Architect</h3>
-           <ToggleRow active={settings.loyalty.enabled} onToggle={() => updateLoyalty({ enabled: !settings.loyalty.enabled })} label="" description="" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-           <FormField label="Points Per Dollar" icon={<Coins size={16}/>}>
-              <input type="number" value={settings.loyalty.pointsPerDollar} onChange={e => updateLoyalty({ pointsPerDollar: parseFloat(e.target.value) || 0 })} className="form-input-premium-settings" />
-           </FormField>
-           <FormField label="Reward Threshold" icon={<TrendingUp size={16}/>}>
-              <input type="number" value={settings.loyalty.rewardThreshold} onChange={e => updateLoyalty({ rewardThreshold: parseInt(e.target.value) || 0 })} className="form-input-premium-settings" />
-           </FormField>
-        </div>
-        <FormField label="Reward Description" icon={<Gift size={16}/>}>
-           <input value={settings.loyalty.rewardDescription} onChange={e => updateLoyalty({ rewardDescription: e.target.value })} className="form-input-premium-settings" placeholder="e.g. Free 1g Pre-Roll" />
-        </FormField>
-      </div>
-
-      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
-        <div className="flex items-center justify-between">
-           <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><ShieldCheck className="text-emerald-500" size={32}/> Custom Protocols</h3>
-           <button onClick={addProtocol} className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"><Plus size={20}/></button>
-        </div>
-        <div className="space-y-6">
-           {settings.customProtocols.length === 0 ? (
-             <div className="py-10 text-center text-slate-700 font-black uppercase tracking-[5px] text-[10px] border-2 border-dashed border-slate-900 rounded-[32px]">No Active Protocols</div>
-           ) : (
-             settings.customProtocols.map(protocol => (
-               <div key={protocol.id} className="bg-slate-950/50 p-8 rounded-[32px] border border-white/5 flex items-center justify-between group">
-                  <div className="space-y-1">
-                     <h4 className="text-white font-black uppercase tracking-tight text-lg">{protocol.label}</h4>
-                     <p className="text-slate-500 text-xs font-medium italic">{protocol.description}</p>
-                  </div>
-                  <div className="flex items-center gap-6">
-                     <button onClick={() => toggleProtocol(protocol.id)} className={`w-14 h-7 rounded-full p-1 transition-all ${protocol.enabled ? 'bg-emerald-600' : 'bg-slate-800'}`}>
-                        <div className={`w-5 h-5 bg-white rounded-full transition-all ${protocol.enabled ? 'translate-x-7' : 'translate-x-0'}`}></div>
-                     </button>
-                     <button onClick={() => setSettings(prev => ({ ...prev, customProtocols: prev.customProtocols.filter(p => p.id !== protocol.id) }))} className="text-slate-700 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={20}/></button>
-                  </div>
-               </div>
-             ))
-           )}
-        </div>
-      </div>
       
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><Github className="text-slate-400" size={32}/> Cloud Sync</h3>
@@ -709,6 +811,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard'|'orders'|'inventory'|'settings'|'logs'>('dashboard');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
 
   const stats = {
     todayRevenue: orders.filter(o => o.status !== OrderStatus.Cancelled).reduce((sum, o) => sum + o.total, 0),
@@ -752,7 +855,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar min-h-0">
           {activeTab === 'dashboard' && <Dashboard stats={stats} />}
           {activeTab === 'orders' && <OrderManager orders={orders} updateOrderStatus={updateOrderStatus} />}
-          {activeTab === 'inventory' && <ProductManager products={products} onEdit={setEditingProduct} onAdd={handleAddNewProduct} />}
+          {activeTab === 'inventory' && <ProductManager products={products} onEdit={setEditingProduct} onAdd={handleAddNewProduct} onAiAdd={() => setIsAiWizardOpen(true)} />}
           {activeTab === 'settings' && <Settings settings={settings} setSettings={setSettings} />}
         </div>
       </main>
@@ -763,6 +866,15 @@ const AdminApp: React.FC<AdminAppProps> = ({
           brands={brands} setBrands={setBrands} onClose={() => setEditingProduct(null)} 
           onSave={p => setProducts(prev => prev.map(old => old.id === p.id ? p : old))} 
           onDelete={() => { setProducts(prev => prev.filter(p => p.id !== editingProduct.id)); setEditingProduct(null); }} 
+        />
+      )}
+
+      {isAiWizardOpen && (
+        <AiVaultWizard 
+          brands={brands} 
+          categories={categories}
+          onClose={() => setIsAiWizardOpen(false)} 
+          onSave={p => setProducts(prev => [p, ...prev])}
         />
       )}
     </div>

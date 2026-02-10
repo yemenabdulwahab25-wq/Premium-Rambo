@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { StrainType } from "../types";
+import { StrainType, CategoryEnum } from "../types";
 
 // Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -130,63 +130,22 @@ export const bobbyProAssistant = async (query: string, inventory: any[]) => {
   }
 };
 
-export const generateThankYouMessage = async (
-  customerName: string,
-  items: any[],
-  style: 'friendly' | 'premium'
-) => {
-  try {
-    const itemNames = items.map(i => i.name).join(", ");
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [{
-        parts: [{
-          text: `Generate a short thank you message for a cannabis customer who just picked up their order.
-          Customer: ${customerName}
-          Purchased: ${itemNames}
-          Style: ${style}
-          Rules:
-          1. Mention the specific items if possible.
-          2. Keep it under 160 characters (for SMS).
-          3. Always end with: "Enjoy responsibly. 21+ only."
-          4. Be professional but high-end.`
-        }]
-      }],
-    });
-    return response.text;
-  } catch (error) {
-    return null;
-  }
-};
-
 export const removeImageBackground = async (base64Image: string, mimeType: string) => {
-  if (!base64Image || base64Image.length < 100) {
-    console.error("Invalid image data provided to background remover.");
-    return null;
-  }
+  if (!base64Image || base64Image.length < 100) return null;
   
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: [{
         parts: [
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: mimeType,
-            },
-          },
-          {
-            text: 'MANDATORY: Remove all background elements from this image. Replace the background with a solid, pure studio white (#FFFFFF). Centrally align the product. Ensure no artifacts or shadows remain unless they are soft and look professionally shot in a studio. Output the final image bytes.',
-          },
+          { inlineData: { data: base64Image, mimeType: mimeType } },
+          { text: 'MANDATORY: Remove background. Solid white background (#FFFFFF). Output image bytes.' },
         ],
       }],
     });
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
-      }
+      if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
     }
     return null;
   } catch (error) {
@@ -195,40 +154,37 @@ export const removeImageBackground = async (base64Image: string, mimeType: strin
   }
 };
 
-export const scanProductFromImage = async (base64Image: string, mimeType: string) => {
-  if (!base64Image || base64Image.length < 100) {
-    console.error("Invalid image data provided to scanner.");
-    return null;
-  }
-
+export const aiInventoryWizard = async (input: { text?: string, image?: { data: string, mimeType: string } }) => {
   try {
+    const parts: any[] = [];
+    if (input.image) {
+      parts.push({ inlineData: { data: input.image.data, mimeType: input.image.mimeType } });
+    }
+    if (input.text) {
+      parts.push({ text: input.text });
+    }
+    
+    parts.push({
+      text: `Act as a master AI inventory specialist for a premium cannabis vault. 
+      Analyze the input (text description or image of packaging). 
+      Extract ALL details to create a new product SKU.
+      
+      REQUIRED DATA:
+      - name: Exact strain or product name.
+      - brand: Recognized brand or owner.
+      - thc: Estimated or extracted THC level as a number.
+      - type: "Sativa", "Indica", or "Hybrid".
+      - category: One of ${Object.values(CategoryEnum).join(', ')}.
+      - description: A high-end 3-sentence narrative.
+      - weights: Array of { weight: string, price: number, stock: number }. 
+        If price is unknown, estimate based on current exotic market value for that strain (e.g., $45-60 for 3.5g).
+      
+      Return a complete JSON product object.`
+    });
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [{
-        parts: [
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: mimeType,
-            },
-          },
-          {
-            text: `Act as an advanced "Genetics Lens" (similar to Google Lens) specialized in the premium cannabis industry. 
-            Analyze the product image with extreme precision. Identify exotic genetics, high-end packaging signatures, and regulatory labels.
-            
-            EXTRACT TASKS:
-            1. Recognize the exact brand from logos, typography, or packaging style (e.g., Jungle Boys, 710 Labs, Alien Labs).
-            2. Identify the specific strain name (e.g., "Zkittlez", "Blueberry Cruffin").
-            3. Detect the THC and CBD percentages from lab testing labels.
-            4. Classify based on terpene profiles or packaging indicators (Indica/Sativa/Hybrid).
-            5. Determine the category (Flowers, Concentrates, etc.).
-
-            If data is missing, use your deep industry knowledge of these brands to fill in the most likely details (e.g., if it's a Connected 'Gushers' pack, it's likely a Hybrid).
-
-            Return a strict JSON object.`,
-          },
-        ],
-      }],
+      contents: [{ parts }],
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -238,18 +194,34 @@ export const scanProductFromImage = async (base64Image: string, mimeType: string
             brand: { type: Type.STRING },
             thc: { type: Type.NUMBER },
             type: { type: Type.STRING },
-            category: { type: Type.STRING }
+            category: { type: Type.STRING },
+            description: { type: Type.STRING },
+            weights: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  weight: { type: Type.STRING },
+                  price: { type: Type.NUMBER },
+                  stock: { type: Type.NUMBER }
+                },
+                required: ["weight", "price", "stock"]
+              }
+            }
           },
-          required: ["name", "brand", "thc", "type", "category"]
+          required: ["name", "brand", "thc", "type", "category", "description", "weights"]
         }
       }
     });
-    
+
     const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text.trim());
+    return text ? JSON.parse(text.trim()) : null;
   } catch (error) {
-    console.error("AI Scan failed:", error);
+    console.error("AI Inventory Wizard failed:", error);
     return null;
   }
+};
+
+export const scanProductFromImage = async (base64Image: string, mimeType: string) => {
+  return aiInventoryWizard({ image: { data: base64Image, mimeType } });
 };
