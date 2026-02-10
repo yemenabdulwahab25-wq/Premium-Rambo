@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Search, 
   ShoppingCart, 
@@ -92,11 +91,27 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authData, setAuthData] = useState({ name: '', phone: '', email: '' });
+  
+  // Timer for secret admin access
+  const pressTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem('bobby_tour_complete');
     if (!hasSeenTour) setShowBobbyTour(true);
   }, []);
+
+  const handleLogoPressStart = () => {
+    pressTimer.current = window.setTimeout(() => {
+      onStaffLogin();
+    }, 2000); // 2 second hold on logo triggers staff login
+  };
+
+  const handleLogoPressEnd = () => {
+    if (pressTimer.current) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
 
   const availableBrandsForCategory = useMemo(() => {
     if (!activeCategory) return [];
@@ -148,7 +163,13 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
       <div className="sticky top-0 bg-white/95 backdrop-blur-2xl shadow-sm z-30 p-4 border-b border-slate-100">
         <div className="max-w-6xl mx-auto flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
+              onMouseDown={handleLogoPressStart}
+              onMouseUp={handleLogoPressEnd}
+              onTouchStart={handleLogoPressStart}
+              onTouchEnd={handleLogoPressEnd}
+            >
                <div className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden bg-slate-100 shadow-xl border border-slate-200 shrink-0">
                   {settings.logoUrl ? <img src={settings.logoUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-900 flex items-center justify-center text-emerald-500 font-black">R</div>}
                </div>
@@ -278,15 +299,17 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                     <p className="mt-4 md:mt-6 text-[8px] md:text-[9px] font-black uppercase text-slate-500 tracking-[2px] md:tracking-[3px] text-center">{settings.loyalty.rewardDescription}</p>
                 </div>
 
-                {/* Staff Access point (Discreet) */}
-                <div className="mt-20 pt-10 border-t border-slate-100 flex justify-center">
-                   <button 
-                     onClick={onStaffLogin} 
-                     className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-slate-100 text-slate-300 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95 group"
-                   >
-                     <ShieldAlert size={18} className="group-hover:animate-pulse" />
-                     <span className="text-[10px] font-black uppercase tracking-[4px]">Staff Portal Access</span>
-                   </button>
+                <div className="mt-20 pt-10 border-t border-slate-100 space-y-4">
+                   <h3 className="text-center text-[10px] font-black uppercase tracking-[5px] text-slate-400 mb-6">Staff Control</h3>
+                   <div className="flex justify-center">
+                     <button 
+                       onClick={onStaffLogin} 
+                       className="flex items-center justify-center gap-4 w-full max-w-sm bg-slate-900 text-white py-6 rounded-[32px] font-black uppercase tracking-[4px] text-xs shadow-2xl active:scale-95 transition-all group"
+                     >
+                       <ShieldAlert size={18} className="text-emerald-500 group-hover:animate-pulse" />
+                       STAFF PORTAL ACCESS
+                     </button>
+                   </div>
                 </div>
               </div>
             ) : (
@@ -297,14 +320,14 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
                     <button onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }} className="w-full sm:w-auto bg-slate-900 text-white px-10 md:px-20 py-5 md:py-7 rounded-2xl md:rounded-[40px] font-black uppercase text-[11px] md:text-[12px] tracking-[4px] md:tracking-[6px] shadow-2xl active:scale-95 transition-all">SIGN IN / JOIN VAULT</button>
                 </div>
 
-                {/* Staff Access point for unauthenticated state */}
-                <div className="flex justify-center">
+                <div className="flex flex-col items-center gap-6">
+                   <div className="w-full h-px bg-slate-100 max-w-sm"></div>
                    <button 
                      onClick={onStaffLogin} 
-                     className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-slate-100 text-slate-300 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95 group"
+                     className="flex items-center gap-3 px-10 py-4 rounded-2xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-100 transition-all active:scale-95 group font-black uppercase tracking-[4px] text-[10px]"
                    >
                      <ShieldAlert size={18} />
-                     <span className="text-[10px] font-black uppercase tracking-[4px]">Staff Entry</span>
+                     Authorized Staff Login
                    </button>
                 </div>
               </div>

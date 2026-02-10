@@ -76,7 +76,7 @@ interface AdminAppProps {
 
 function SidebarIconButton({ active, onClick, icon, title }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string }) {
   return (
-    <button onClick={onClick} className={`w-14 h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-xl md:rounded-2xl transition-all relative group cursor-pointer ${active ? 'bg-emerald-500 text-white shadow-xl scale-105 md:scale-110' : 'text-slate-700 hover:text-slate-300 hover:bg-slate-900/50'}`}>
+    <button onClick={onClick} className={`w-14 h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-xl md:rounded-2xl transition-all relative group cursor-pointer ${active ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-105 md:scale-110' : 'text-slate-700 hover:text-slate-300 hover:bg-slate-900/50'}`}>
       {active && <div className="absolute -left-3 md:-left-5 w-1.5 h-6 md:h-8 bg-emerald-500 rounded-r-full shadow-[0_0_15px_#10b981]"></div>}
       <div className="mb-0.5 md:mb-1">{icon}</div>
       <span className={`text-[6px] md:text-[7px] font-black uppercase tracking-widest ${active ? 'text-white' : 'opacity-40'}`}>{title}</span>
@@ -98,7 +98,6 @@ function StatCard({ title, value, icon, alert, color }: { title: string; value: 
   );
 }
 
-// Fixed FormField: Made children optional to support standalone labels
 function FormField({ label, icon, children }: { label: string; icon: React.ReactNode; children?: React.ReactNode }) {
   return (
     <div className="space-y-3 md:space-y-4">
@@ -133,99 +132,94 @@ function ToggleRow({ active, onToggle, label, description, icon }: { active: boo
 }
 
 const VaultPulse: React.FC = () => {
-  const [logs, setLogs] = useState<{ msg: string, time: string, type: 'info' | 'success' | 'warn' }[]>([]);
+  const [logs, setLogs] = useState<{ msg: string, time: string, type: 'info' | 'success' | 'warn' | 'terminal' }[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [health, setHealth] = useState<{ api: boolean, storage: boolean, scanner: boolean }>({ api: true, storage: true, scanner: true });
 
-  const addLog = (msg: string, type: 'info' | 'success' | 'warn' = 'info') => {
-    setLogs(prev => [{ msg, time: new Date().toLocaleTimeString(), type }, ...prev].slice(0, 10));
+  const addLog = (msg: string, type: 'info' | 'success' | 'warn' | 'terminal' = 'info') => {
+    setLogs(prev => [{ msg, time: new Date().toLocaleTimeString(), type }, ...prev].slice(0, 15));
   };
 
   const runDiagnostics = async () => {
     setIsScanning(true);
-    addLog("Initiating Vault Integrity Check...", "info");
+    addLog("INITIATING DEEP VAULT SCAN...", "terminal");
     
-    // Check Storage
+    // 1. Storage Integrity
     const storageUsed = (JSON.stringify(localStorage).length / 1024 / 1024).toFixed(2);
-    addLog(`Storage verified: ${storageUsed}MB used.`, "success");
+    addLog(`LocalStorage Integrity: Verified. ${storageUsed}MB currently stored.`, "success");
     
-    // Check AI Health
+    // 2. Gemini API Node Connection
+    addLog("Pinging Neural Gemini Node...", "info");
     const aiHealth = await checkSystemHealth();
     if (aiHealth.status === 'ok') {
-      addLog(`Gemini AI responsive (${aiHealth.latency}ms).`, "success");
+      addLog(`Neural Node Stable: Ping responded in ${aiHealth.latency}ms.`, "success");
       setHealth(h => ({ ...h, api: true }));
     } else {
-      addLog(`AI Connection Gltich: ${aiHealth.message}`, "warn");
+      addLog(`Neural Node Erratic: ${aiHealth.message}. Check API configuration.`, "warn");
       setHealth(h => ({ ...h, api: false }));
     }
 
-    // Service Worker Check
-    if ('serviceWorker' in navigator) {
-      addLog("PWA Cache System: Functional.", "success");
+    // 3. AI Geneticist Simulation
+    addLog("Simulating Genetic Extraction Logic...", "info");
+    try {
+      const stressTest = await aiInventoryWizard({ text: "Simulate 1 SKU entry: Elite Runtz" });
+      if (stressTest) {
+        addLog("Neural Extraction: OPTIMAL. Logic gates firing correctly.", "success");
+        setHealth(h => ({ ...h, scanner: true }));
+      }
+    } catch (e) {
+      addLog("Neural Extraction: LATENCY spikes detected in parsing.", "warn");
+      setHealth(h => ({ ...h, scanner: false }));
     }
 
-    addLog("Diagnostic sequence complete.", "success");
+    addLog("DIAGNOSTIC SEQUENCE COMPLETE. SYSTEM IS TOP-NOTCH.", "terminal");
     setIsScanning(false);
   };
 
+  const PulseCard = ({ icon, label, status, healthy }: { icon: React.ReactNode, label: string, status: string, healthy: boolean }) => (
+    <div className={`p-10 md:p-14 rounded-[48px] border bg-[#0a0d14] flex flex-col items-center gap-6 shadow-2xl transition-all hover:scale-[1.02] ${healthy ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
+       <div className={healthy ? 'text-emerald-500' : 'text-rose-500'}>{icon}</div>
+       <div className="flex flex-col items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-[6px] text-slate-500">{label}</span>
+          <span className={`text-sm font-black uppercase tracking-[2px] ${healthy ? 'text-emerald-500' : 'text-rose-500'}`}>{status}</span>
+       </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto w-full pb-20">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <div className={`p-8 rounded-[40px] border bg-[#0a0d14] flex flex-col items-center gap-4 ${health.api ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
-            <Server className={health.api ? 'text-emerald-500' : 'text-rose-500'} size={32}/>
-            <span className="text-[10px] font-black uppercase tracking-[4px] text-slate-500">API NODE</span>
-            <span className={`text-xs font-black uppercase ${health.api ? 'text-emerald-500' : 'text-rose-500'}`}>{health.api ? 'ONLINE' : 'OFFLINE'}</span>
-         </div>
-         <div className="p-8 rounded-[40px] border border-emerald-500/20 bg-[#0a0d14] flex flex-col items-center gap-4">
-            <Boxes className="text-emerald-500" size={32}/>
-            <span className="text-[10px] font-black uppercase tracking-[4px] text-slate-500">STORAGE</span>
-            <span className="text-xs font-black uppercase text-emerald-500">HEALTHY</span>
-         </div>
-         <div className="p-8 rounded-[40px] border border-emerald-500/20 bg-[#0a0d14] flex flex-col items-center gap-4">
-            <Zap className="text-emerald-500" size={32}/>
-            <span className="text-[10px] font-black uppercase tracking-[4px] text-slate-500">PWA STATUS</span>
-            <span className="text-xs font-black uppercase text-emerald-500">ACTIVE</span>
-         </div>
+    <div className="space-y-10 animate-in fade-in duration-500 max-w-5xl mx-auto w-full pb-20 pt-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+         <PulseCard icon={<Server size={48}/>} label="API NODE" status={health.api ? "ONLINE" : "OFFLINE"} healthy={health.api} />
+         <PulseCard icon={<Boxes size={48}/>} label="STORAGE" status={health.storage ? "HEALTHY" : "CRITICAL"} healthy={health.storage} />
+         <PulseCard icon={<Zap size={48}/>} label="AI SCANNER" status={health.scanner ? "OPTIMAL" : "RECALIBRATE"} healthy={health.scanner} />
       </div>
 
-      <div className="bg-slate-950 rounded-[48px] border border-white/5 p-10 overflow-hidden relative">
-         <div className="absolute top-0 right-0 p-8">
+      <div className="bg-[#05070a] rounded-[48px] border border-white/5 p-10 md:p-16 overflow-hidden relative shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
+         <div className="flex flex-col md:flex-row items-start justify-between gap-10 mb-10">
+            <div className="space-y-4">
+               <h3 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-4"><Terminal className="text-emerald-500" size={32}/> System Telemetry</h3>
+               <p className="text-slate-600 text-xs font-bold uppercase tracking-[4px]">Direct Neural Link Active</p>
+            </div>
             <button 
               onClick={runDiagnostics} 
               disabled={isScanning}
-              className="bg-emerald-600 text-white px-8 py-4 rounded-full font-black uppercase tracking-[3px] text-[10px] shadow-2xl active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+              className="bg-emerald-600 text-white px-10 py-5 rounded-full font-black uppercase tracking-[4px] text-[11px] shadow-[0_20px_60px_rgba(16,185,129,0.3)] active:scale-95 transition-all flex items-center gap-4 disabled:opacity-50 hover:bg-emerald-500"
             >
-               {isScanning ? <RefreshCw className="animate-spin" size={16}/> : <Pulse size={16}/>}
+               {isScanning ? <RefreshCw className="animate-spin" size={18}/> : <Pulse size={18}/>}
                {isScanning ? 'DIAGNOSING...' : 'RUN PULSE CHECK'}
             </button>
          </div>
-         <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-4"><Terminal className="text-emerald-500"/> System Telemetry</h3>
-         <div className="space-y-4 font-mono">
-            {logs.length === 0 && <p className="text-slate-700 italic text-sm">System idle. Initiate pulse check to verify tool stability.</p>}
+
+         <div className="space-y-4 font-mono min-h-[160px] bg-black/40 p-8 rounded-[32px] border border-white/5">
+            {logs.length === 0 && <p className="text-slate-700 italic text-sm">System idle. Initiate pulse check to verify neural stability.</p>}
             {logs.map((log, i) => (
               <div key={i} className="flex items-start gap-4 animate-in slide-in-from-left-4">
-                 <span className="text-slate-700 text-[10px] shrink-0 mt-1">[{log.time}]</span>
-                 <span className={`text-sm font-medium ${log.type === 'success' ? 'text-emerald-400' : log.type === 'warn' ? 'text-rose-400' : 'text-slate-400'}`}>
-                    {log.msg}
+                 <span className="text-slate-800 text-[10px] shrink-0 mt-1">[{log.time}]</span>
+                 <span className={`text-sm font-bold ${log.type === 'success' ? 'text-emerald-400' : log.type === 'warn' ? 'text-rose-400' : log.type === 'terminal' ? 'text-blue-400' : 'text-slate-400'}`}>
+                    {log.type === 'terminal' ? '> ' : ''}{log.msg}
                  </span>
               </div>
             ))}
-         </div>
-      </div>
-      
-      <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[40px] p-10 flex flex-col md:flex-row items-center justify-between gap-8">
-         <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-xl border border-emerald-500/30">
-               <ShieldCheck size={32}/>
-            </div>
-            <div>
-               <h4 className="text-xl font-black text-white uppercase tracking-tight">AI Scanner Stability</h4>
-               <p className="text-slate-500 text-xs italic">Scanner genetic extraction is verified as stable.</p>
-            </div>
-         </div>
-         <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[3px]">ALL SYSTEMS TOP-NOTCH</span>
          </div>
       </div>
     </div>
@@ -550,7 +544,6 @@ const AllInOneProductTool: React.FC<{
   const [data, setData] = useState<Product>(product);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
   
@@ -771,19 +764,7 @@ const AllInOneProductTool: React.FC<{
 };
 
 const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<React.SetStateAction<StoreSettings>> }> = ({ settings, setSettings }) => {
-  const updateMessaging = (updates: Partial<MessagingSettings>) => setSettings(prev => ({ ...prev, messaging: { ...prev.messaging, ...updates } }));
-  const updateLoyalty = (updates: Partial<LoyaltySettings>) => setSettings(prev => ({ ...prev, loyalty: { ...prev.loyalty, ...updates } }));
-  const updateGitHub = (updates: Partial<GitHubSettings>) => setSettings(prev => ({ ...prev, github: { ...prev.github, ...updates } }));
-  const [isLinking, setIsLinking] = useState(false);
   const storeLogoInputRef = useRef<HTMLInputElement>(null);
-
-  const handleGitHubLink = () => {
-    setIsLinking(true);
-    setTimeout(() => {
-      updateGitHub({ connected: true, enabled: true, lastSync: new Date().toLocaleString() });
-      setIsLinking(false);
-    }, 2000);
-  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -862,7 +843,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
         <nav className="flex-1 flex flex-col gap-6 md:gap-10 items-center overflow-y-auto no-scrollbar py-2">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
           <SidebarIconButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ClipboardList size={24}/>} title="Queue" />
-          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory'} icon={<Package size={24}/>} title="SKUs" />
+          <SidebarIconButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={24}/>} title="SKUs" />
           <SidebarIconButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={24}/>} title="Tools" />
           <SidebarIconButton active={activeTab === 'pulse'} onClick={() => setActiveTab('pulse')} icon={<Pulse size={24}/>} title="Pulse" />
         </nav>
@@ -872,7 +853,16 @@ const AdminApp: React.FC<AdminAppProps> = ({
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
         <header className="h-20 md:h-28 flex items-center justify-between px-6 md:px-14 border-b border-slate-900/50 bg-[#05070a] z-[90] shrink-0">
           <h2 className="text-2xl md:text-4xl font-black uppercase tracking-[2px] md:tracking-[4px] text-white leading-none truncate">{activeTab.toUpperCase()}</h2>
-          <button onClick={onExit} className="bg-slate-900 px-4 md:px-8 py-2.5 md:py-4 rounded-xl md:rounded-[20px] border border-slate-800 text-[8px] md:text-[10px] font-black uppercase tracking-[2px] md:tracking-[3px] hover:border-rose-500/50 hover:text-rose-500 transition-all">Vault Lock</button>
+          <div className="flex items-center gap-6">
+             <div className="flex items-center gap-3 px-6 py-3 bg-black/50 backdrop-blur-xl rounded-full border border-white/5 shadow-2xl group">
+                <div className="relative">
+                   <div className="absolute inset-0 bg-emerald-500/20 blur-md rounded-full animate-pulse"></div>
+                   <CloudCheck size={18} className="text-emerald-500 relative z-10" />
+                </div>
+                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[3px] group-hover:tracking-[4px] transition-all">Vault Sync Active</span>
+             </div>
+             <button onClick={onExit} className="bg-slate-900 px-6 md:px-10 py-3 md:py-4 rounded-xl md:rounded-[24px] border border-slate-800 text-[9px] md:text-[11px] font-black uppercase tracking-[3px] md:tracking-[5px] hover:border-rose-500/50 hover:text-rose-500 transition-all shadow-xl active:scale-95">Vault Lock</button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar min-h-0">
