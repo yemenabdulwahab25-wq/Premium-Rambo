@@ -208,7 +208,13 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
         <div className="max-w-4xl mx-auto flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center text-emerald-500 font-black shadow-xl">R</div>
+               <div className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden bg-slate-100 shadow-xl border border-slate-200">
+                  {settings.logoUrl ? (
+                    <img src={settings.logoUrl} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-900 flex items-center justify-center text-emerald-500 font-black">R</div>
+                  )}
+               </div>
                <span className="font-black text-slate-900 tracking-tighter text-xl">Premium Rambo</span>
             </div>
             <button onClick={() => setIsCartOpen(true)} className="relative p-3 bg-slate-50 text-slate-900 rounded-2xl active:scale-90 transition-all border border-slate-200">
@@ -480,8 +486,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
         </div>
       )}
 
-      {/* Bobby Pro AI Mini FAB */}
-      <div className={`fixed z-[150] transition-all duration-700 ${isBobbyOpen ? 'w-full max-w-[440px] h-[720px] inset-4 md:inset-auto md:bottom-10 md:right-10' : 'bottom-36 right-8 w-16 h-16'}`}>
+      <div className={`fixed bottom-36 right-8 z-[150] transition-all duration-700 ${isBobbyOpen ? 'w-full max-w-[440px] h-[720px] bottom-10 px-4' : 'w-16 h-16'}`}>
         {isBobbyOpen ? (
           <div className="bg-white rounded-[72px] shadow-2xl flex flex-col h-full border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-24 duration-700">
             <div className="bg-slate-900 p-12 text-white flex items-center justify-between"><div className="flex items-center gap-4"><Zap size={28} fill="currentColor" className="text-emerald-500"/><span className="font-black text-2xl tracking-tighter uppercase">Bobby Pro AI</span></div><button onClick={() => setIsBobbyOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition-all"><Minus size={28} /></button></div>
@@ -495,10 +500,7 @@ const CustomerApp: React.FC<CustomerAppProps> = ({
             </div>
           </div>
         ) : (
-          <button 
-            onClick={() => setIsBobbyOpen(true)} 
-            className="bg-slate-900 text-white w-full h-full rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all group border border-white/10"
-          >
+          <button onClick={() => setIsBobbyOpen(true)} className="bg-slate-900 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all group border border-white/10">
             <div className="relative">
               <Zap size={24} fill="currentColor" className="text-emerald-500 group-hover:animate-pulse"/>
               <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-0 group-hover:opacity-40 transition-opacity"></div>

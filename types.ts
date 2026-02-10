@@ -157,6 +157,7 @@ export interface MessageLog {
 }
 
 export interface StoreSettings {
+  logoUrl?: string;
   pickupOn: boolean;
   deliveryOn: boolean;
   locationRequirementOn: boolean;

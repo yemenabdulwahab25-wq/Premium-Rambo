@@ -73,6 +73,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 ];
 
 export const INITIAL_SETTINGS: StoreSettings = {
+  logoUrl: 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&q=80&w=200&h=200',
   pickupOn: true,
   deliveryOn: false,
   locationRequirementOn: true,

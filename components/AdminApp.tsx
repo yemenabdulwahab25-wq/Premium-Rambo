@@ -43,7 +43,9 @@ import {
   PlusCircle,
   Github,
   CloudUpload,
-  Link2
+  Link2,
+  Image as LucideImage,
+  Upload
 } from 'lucide-react';
 import { Product, Order, StoreSettings, OrderStatus, StrainType, WeightPrice, MessageLog, MessagingSettings, LoyaltySettings, GitHubSettings } from '../types';
 import { getCategoryIcon } from '../constants';
@@ -205,13 +207,14 @@ const PerfectFlowProductModal: React.FC<{
   const [showAddCat, setShowAddCat] = useState(false);
   const [showAddBrand, setShowAddBrand] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const brandLogoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     onSave(data);
     setLastSync(new Date());
   }, [data, onSave]);
 
-  const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'brandLogo') => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsProcessing(true);
@@ -221,16 +224,20 @@ const PerfectFlowProductModal: React.FC<{
         const base64Data = dataUrl.split(',')[1];
         const mimeType = file.type || 'image/jpeg';
         
-        setData(prev => ({ ...prev, image: dataUrl }));
+        setData(prev => ({ ...prev, [field]: dataUrl }));
 
-        try {
-          const cleaned = await removeImageBackground(base64Data, mimeType);
-          if (cleaned) {
-            setData(prev => ({ ...prev, image: cleaned }));
+        if (field === 'image') {
+          try {
+            const cleaned = await removeImageBackground(base64Data, mimeType);
+            if (cleaned) {
+              setData(prev => ({ ...prev, image: cleaned }));
+            }
+          } catch (error) {
+            console.error("BG removal error:", error);
+          } finally {
+            setIsProcessing(false);
           }
-        } catch (error) {
-          console.error("BG removal error:", error);
-        } finally {
+        } else {
           setIsProcessing(false);
         }
     };
@@ -292,18 +299,31 @@ const PerfectFlowProductModal: React.FC<{
           
           <div className="space-y-6">
             <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[5px] ml-4 flex items-center gap-2"><ImageIcon size={14}/> 1. Visual Capture</h4>
-            <div className="h-96 relative bg-slate-950 rounded-[56px] border border-white/5 group overflow-hidden">
-              <img src={data.image} className="w-full h-full object-contain p-10 transition-transform duration-1000 group-hover:scale-110" />
-              {isProcessing && (
-                <div className="absolute inset-0 bg-emerald-600/90 backdrop-blur-3xl flex flex-col items-center justify-center animate-in fade-in">
-                  <RefreshCw className="animate-spin text-white mb-6" size={60}/>
-                  <h4 className="font-black uppercase text-[15px] tracking-[8px] text-white">Stripping Background...</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
+                <img src={data.image} className="w-full h-full object-contain p-6 transition-transform duration-1000 group-hover:scale-110" />
+                {isProcessing && (
+                  <div className="absolute inset-0 bg-emerald-600/90 backdrop-blur-3xl flex flex-col items-center justify-center animate-in fade-in">
+                    <RefreshCw className="animate-spin text-white mb-6" size={40}/>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                   <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Product Photo</button>
                 </div>
-              )}
-              <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                 <button onClick={() => fileInputRef.current?.click()} className="bg-white text-black px-10 py-5 rounded-full font-black uppercase text-[10px] tracking-[5px] shadow-2xl active:scale-95 transition-all">Replace Media</button>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'image')} />
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileCapture} />
+
+              <div className="h-64 relative bg-slate-950 rounded-[40px] border border-white/5 group overflow-hidden">
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
+                  <LucideImage size={40}/>
+                  <span className="text-[8px] font-black uppercase tracking-widest mt-2">Brand Logo</span>
+                </div>
+                <img src={data.brandLogo} className="w-full h-full object-contain p-12 relative z-10 transition-transform duration-1000 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
+                   <button onClick={() => brandLogoInputRef.current?.click()} className="bg-white text-black px-6 py-3 rounded-full font-black uppercase text-[8px] tracking-[4px] shadow-2xl active:scale-95 transition-all">Upload Logo</button>
+                </div>
+                <input ref={brandLogoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileCapture(e, 'brandLogo')} />
+              </div>
             </div>
             {!data.image.includes('picsum') && !isProcessing && (
               <p className="text-center text-[9px] font-black uppercase text-emerald-500 tracking-widest">AI Background Stripped & Sanitized</p>
@@ -442,6 +462,7 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
   };
 
   const [isLinking, setIsLinking] = useState(false);
+  const storeLogoInputRef = useRef<HTMLInputElement>(null);
 
   const handleGitHubLink = () => {
     setIsLinking(true);
@@ -452,9 +473,38 @@ const Settings: React.FC<{ settings: StoreSettings; setSettings: React.Dispatch<
     }, 2000);
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSettings(prev => ({ ...prev, logoUrl: event.target?.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="max-w-5xl space-y-16 animate-in fade-in duration-500 pb-96">
       
+      {/* BRAND IDENTITY */}
+      <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
+        <h3 className="text-3xl font-black text-white flex items-center gap-6 uppercase tracking-tighter"><LucideImage className="text-emerald-500" size={32}/> Brand Identity</h3>
+        <div className="flex flex-col md:flex-row items-center gap-12">
+          <div className="w-48 h-48 bg-slate-950 rounded-[48px] border border-white/5 flex items-center justify-center overflow-hidden relative group">
+            <img src={settings.logoUrl} className="w-full h-full object-contain p-6" />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => storeLogoInputRef.current?.click()}>
+              <Upload className="text-white" size={32}/>
+            </div>
+            <input ref={storeLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+          </div>
+          <div className="flex-1 space-y-4">
+             <h4 className="text-xl font-black text-white uppercase tracking-tight">Store Master Logo</h4>
+             <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Upload your high-resolution brand identifier. This will be visible across the entire client-facing portal and staff vaults.</p>
+             <button onClick={() => storeLogoInputRef.current?.click()} className="bg-emerald-600/10 text-emerald-500 px-8 py-3 rounded-2xl border border-emerald-500/20 font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Select New Media</button>
+          </div>
+        </div>
+      </div>
+
       {/* GITHUB SYNC ENGINE */}
       <div className="bg-[#0a0d14] border border-slate-900 p-14 rounded-[64px] shadow-2xl space-y-12">
         <div className="flex justify-between items-start">
@@ -580,7 +630,13 @@ const AdminApp: React.FC<AdminAppProps> = ({
   return (
     <div className="flex h-screen w-full bg-[#05070a] text-slate-100 overflow-hidden font-sans relative">
       <aside className="w-24 bg-[#0a0d14] border-r border-slate-900 flex flex-col items-center py-10 z-[100] shadow-2xl">
-        <div className="mb-12"><div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">R</div></div>
+        <div className="mb-12">
+          {settings.logoUrl ? (
+            <img src={settings.logoUrl} className="w-12 h-12 rounded-2xl object-cover shadow-2xl" />
+          ) : (
+            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">R</div>
+          )}
+        </div>
         <nav className="flex-1 flex flex-col gap-10 items-center">
           <SidebarIconButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={24}/>} title="Stats" />
           <SidebarIconButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} icon={<ClipboardList size={24}/>} title="Queue" />
